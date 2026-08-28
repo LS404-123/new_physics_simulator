@@ -26,8 +26,8 @@
       title: "粒子能量實驗台",
       description: "比較質量、溫度與物態如何改變粒子的總動能、總勢能及物體內能。",
       topic: "熱與氣體",
-      href: "./HEAT/internal-energy-particle-model/index.html",
-      image: "./HEAT/internal-energy-particle-model/preview.png",
+      href: "./internal-energy-particle-model/index.html",
+      image: "./internal-energy-particle-model/preview.png",
       tags: ["內能", "粒子模型", "動能", "勢能", "冰", "水"]
     }
   ];
