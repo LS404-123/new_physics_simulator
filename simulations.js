@@ -37,6 +37,14 @@
       href: "./HEAT/heat-transfer-conduction-convection/index.html",
       image: "./HEAT/heat-transfer-conduction-convection/preview.png",
       tags: ["熱傳", "傳導", "對流", "粒子推撞", "密度", "浮力"]
+    },
+    {
+      title: "熱輻射收支：何時吸熱，何時放熱？",
+      description: "比較物體放出、環境送入及淨輻射功率，判斷物體何時淨吸熱或淨放熱。",
+      topic: "熱與氣體",
+      href: "./HEAT/thermal-radiation-balance/index.html",
+      image: "./HEAT/thermal-radiation-balance/preview.png",
+      tags: ["熱輻射", "淨輻射", "吸收體", "輻射體", "Stefan-Boltzmann 定律", "熱平衡"]
     }
   ];
 

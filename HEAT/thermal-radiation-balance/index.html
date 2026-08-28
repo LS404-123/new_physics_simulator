@@ -1,0 +1,740 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=1140, initial-scale=1">
+  <title>熱輻射收支：何時吸熱，何時放熱？</title>
+  <link rel="stylesheet" href="../thermometer-calibration-slope/katex/katex.min.css">
+  <script defer src="../thermometer-calibration-slope/katex/katex.min.js"></script>
+  <script defer src="../thermometer-calibration-slope/katex/contrib/auto-render.min.js"></script>
+  <style>
+    :root {
+      --night: #071523;
+      --panel: #0d2234;
+      --panel-2: #112b40;
+      --line: #29495f;
+      --ink: #eef8ff;
+      --muted: #9cb4c4;
+      --incoming: #62e7f2;
+      --outgoing: #ff9f5a;
+      --net: #ffd166;
+      --good: #8be0b2;
+      --danger: #ff7f73;
+    }
+
+    * { box-sizing: border-box; }
+    [hidden] { display: none !important; }
+    html, body {
+      width: 100%;
+      min-width: 1140px;
+      min-height: 768px;
+      margin: 0;
+      overflow: hidden;
+      color: var(--ink);
+      background: #030b12;
+      font-family: "Microsoft JhengHei", "Noto Sans TC", sans-serif;
+    }
+    body { display: grid; place-items: center; }
+    button, input { font: inherit; }
+    button, input[type="range"], label { cursor: pointer; }
+    button:focus-visible, input:focus-visible, a:focus-visible {
+      outline: 3px solid var(--net);
+      outline-offset: 3px;
+    }
+
+    .simulator {
+      width: 1140px;
+      height: 768px;
+      overflow: hidden;
+      background:
+        radial-gradient(circle at 32% 40%, rgba(49, 128, 157, .1), transparent 34%),
+        var(--night);
+      box-shadow: 0 22px 60px rgba(0, 0, 0, .48);
+    }
+
+    .topbar {
+      height: 68px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0 24px;
+      border-bottom: 1px solid var(--line);
+      background: rgba(6, 20, 32, .96);
+    }
+    .title-wrap { display: flex; align-items: baseline; gap: 14px; }
+    h1 { margin: 0; font: 800 27px "PMingLiU", "Noto Serif TC", serif; letter-spacing: .055em; }
+    .subtitle { color: var(--muted); font-size: 13px; }
+    .top-actions { display: flex; align-items: center; gap: 13px; }
+    .stage-badge {
+      min-width: 110px;
+      padding: 7px 12px;
+      border: 1px solid var(--net);
+      border-radius: 999px;
+      color: var(--net);
+      text-align: center;
+      font-size: 14px;
+      font-weight: 800;
+    }
+    .home-link { color: var(--muted); font-size: 14px; text-decoration: none; }
+
+    .workspace {
+      height: 520px;
+      display: grid;
+      grid-template-columns: minmax(0, 7fr) minmax(286px, 3fr);
+      gap: 12px;
+      padding: 12px 16px;
+    }
+    .scene-card, .evidence-card {
+      min-width: 0;
+      overflow: hidden;
+      border: 1px solid var(--line);
+      border-radius: 14px;
+      background: rgba(13, 34, 52, .94);
+      box-shadow: inset 0 1px 0 rgba(255, 255, 255, .04);
+    }
+    .panel-head {
+      height: 48px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      padding: 0 15px;
+      border-bottom: 1px solid var(--line);
+    }
+    .panel-title { font-size: 17px; font-weight: 850; }
+    .legend { display: flex; gap: 13px; color: var(--muted); font-size: 12px; }
+    .legend span::before {
+      content: "";
+      display: inline-block;
+      width: 18px;
+      height: 3px;
+      margin: 0 6px 3px 0;
+      border-radius: 999px;
+      background: var(--legend-color);
+      box-shadow: 0 0 8px var(--legend-color);
+    }
+    .legend .incoming { --legend-color: var(--incoming); }
+    .legend .outgoing { --legend-color: var(--outgoing); }
+
+    .scene-wrap { position: relative; height: 446px; }
+    #radiationCanvas { display: block; width: 100%; height: 100%; }
+    .scene-label {
+      position: absolute;
+      z-index: 2;
+      min-width: 132px;
+      padding: 8px 11px;
+      border: 1px solid rgba(255,255,255,.15);
+      border-radius: 9px;
+      background: rgba(5, 17, 27, .78);
+      backdrop-filter: blur(5px);
+      pointer-events: none;
+    }
+    .scene-label small { display: block; color: var(--muted); font-size: 11px; }
+    .scene-label strong { font: 800 19px Consolas, monospace; }
+    .environment-label { top: 14px; left: 14px; }
+    .object-label { left: 50%; bottom: 18px; transform: translateX(-50%); text-align: center; }
+    .environment-label strong { color: var(--incoming); }
+    .object-label strong { color: var(--outgoing); }
+    .model-flag {
+      position: absolute;
+      top: 17px;
+      right: 16px;
+      color: var(--muted);
+      font-size: 11px;
+      letter-spacing: .08em;
+    }
+
+    .evidence-card { display: grid; grid-template-rows: 48px 1fr 106px; }
+    .scale-note { color: var(--muted); font: 12px Consolas, monospace; }
+    .bar-plot {
+      position: relative;
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 10px;
+      padding: 18px 12px 0;
+    }
+    .zero-line {
+      position: absolute;
+      z-index: 2;
+      top: calc(50% - 21.5px);
+      left: 9px;
+      right: 9px;
+      border-top: 1px solid #7890a0;
+      pointer-events: none;
+    }
+    .zero-line::after {
+      content: "0 W";
+      position: absolute;
+      top: -16px;
+      right: 1px;
+      color: var(--muted);
+      font: 10px Consolas, monospace;
+    }
+    .bar-column { position: relative; z-index: 1; display: grid; grid-template-rows: 1fr 61px; min-width: 0; }
+    .bar-track { position: relative; width: 56px; height: 100%; margin: 0 auto; border-inline: 1px solid rgba(156,180,196,.16); }
+    .bar-fill {
+      position: absolute;
+      left: 8px;
+      right: 8px;
+      min-height: 0;
+      border-radius: 5px 5px 0 0;
+      transition: height .12s linear, top .12s linear;
+    }
+    .bar-fill.up { bottom: 50%; }
+    .bar-fill.down { top: 50%; border-radius: 0 0 5px 5px; }
+    .bar-fill.emit { background: linear-gradient(#ffd0aa, var(--outgoing)); box-shadow: 0 0 18px rgba(255,159,90,.26); }
+    .bar-fill.absorb { background: linear-gradient(#c3fbff, var(--incoming)); box-shadow: 0 0 18px rgba(98,231,242,.24); }
+    .bar-fill.net { background: linear-gradient(#fff0b2, var(--net)); box-shadow: 0 0 18px rgba(255,209,102,.26); }
+    .bar-fill.net.down { background: linear-gradient(var(--net), #b9973e); }
+    .bar-meta { padding-top: 8px; text-align: center; }
+    .bar-name { display: block; color: var(--muted); font-size: 12px; line-height: 1.2; }
+    .bar-value { display: block; margin-top: 3px; font: 800 15px Consolas, monospace; white-space: nowrap; }
+    .balance-card {
+      display: grid;
+      align-content: center;
+      gap: 5px;
+      margin: 8px 12px 12px;
+      padding: 10px 12px;
+      border: 1px solid #3b5b70;
+      border-radius: 10px;
+      background: #091b2a;
+    }
+    .role { color: var(--net); font-size: 20px; font-weight: 900; }
+    .balance-equation { color: var(--muted); font: 12px Consolas, monospace; }
+    .role-note { font-size: 12px; font-weight: 700; }
+
+    .controls {
+      height: 130px;
+      display: grid;
+      grid-template-columns: 1fr 1fr 132px 92px;
+      gap: 12px;
+      align-items: center;
+      padding: 10px 18px;
+      border-top: 1px solid var(--line);
+      background: #091a29;
+    }
+    .control {
+      height: 105px;
+      padding: 11px 13px;
+      border: 1px solid var(--line);
+      border-radius: 10px;
+      background: var(--panel);
+    }
+    .control label { display: flex; justify-content: space-between; gap: 10px; font-size: 14px; font-weight: 800; }
+    .control output { color: var(--net); font: 800 17px Consolas, monospace; }
+    input[type="range"] { width: 100%; height: 41px; margin-top: 5px; accent-color: var(--net); }
+    .range-note { color: var(--muted); font-size: 11px; }
+    .action-button {
+      min-height: 50px;
+      border-radius: 9px;
+      font-weight: 900;
+    }
+    .start-button { border: 0; color: #082032; background: var(--net); box-shadow: 0 4px 0 #9b7b22; }
+    .start-button:active { transform: translateY(2px); box-shadow: 0 2px 0 #9b7b22; }
+    .start-button:disabled { cursor: not-allowed; opacity: .52; box-shadow: none; }
+    .reset-button { border: 1px solid #70899a; color: var(--ink); background: transparent; }
+
+    .footer {
+      height: 50px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 16px;
+      padding: 0 20px;
+      border-top: 1px solid var(--line);
+      color: var(--muted);
+      background: #06131f;
+      font-size: 12px;
+    }
+    .footer strong { color: var(--ink); }
+    .footer-equation { color: var(--ink); font-size: 14px; }
+
+    .prediction-screen {
+      height: 768px;
+      display: grid;
+      grid-template-rows: 92px 1fr 84px;
+      background:
+        linear-gradient(135deg, rgba(98,231,242,.08), transparent 35%),
+        var(--night);
+    }
+    .prediction-head {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0 34px;
+      border-bottom: 1px solid var(--line);
+    }
+    .prediction-head h1 { font-size: 30px; }
+    .prediction-head p { margin: 5px 0 0; color: var(--muted); font-size: 14px; }
+    .prediction-tag { color: var(--net); font: 800 13px Consolas, monospace; letter-spacing: .12em; }
+    .prediction-content { display: grid; place-content: center; gap: 20px; padding: 28px 70px; }
+    .prediction-prompt { margin: 0; text-align: center; font: 800 21px "PMingLiU", "Noto Serif TC", serif; }
+    .scenario-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 24px; width: 970px; }
+    .scenario {
+      min-height: 308px;
+      padding: 27px 28px;
+      border: 1px solid var(--line);
+      border-radius: 13px;
+      background: var(--panel);
+    }
+    .scenario-number { color: var(--muted); font: 800 12px Consolas, monospace; letter-spacing: .12em; }
+    .scenario h2 { margin: 18px 0 10px; font-size: 24px; line-height: 1.5; }
+    .temperature-highlight {
+      display: inline-block;
+      padding: 0 6px;
+      border-bottom: 3px solid var(--net);
+      color: var(--net);
+      white-space: nowrap;
+    }
+    .scenario p { margin: 0 0 21px; color: var(--muted); font-size: 14px; }
+    .choices { display: grid; gap: 9px; }
+    .choice {
+      min-height: 48px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 0 13px;
+      border: 1px solid #38576b;
+      border-radius: 8px;
+      background: #091b2a;
+      font-weight: 800;
+    }
+    .choice:has(input:checked) { border-color: var(--net); background: rgba(255,209,102,.09); }
+    .choice input { width: 18px; height: 18px; accent-color: var(--net); }
+    .prediction-actions {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0 70px;
+      border-top: 1px solid var(--line);
+      background: #081826;
+    }
+    .prediction-actions p { margin: 0; color: var(--muted); font-size: 13px; }
+    .continue-button {
+      min-width: 170px;
+      min-height: 50px;
+      border: 0;
+      border-radius: 9px;
+      color: #082032;
+      background: var(--net);
+      font-weight: 900;
+    }
+    .continue-button:disabled { cursor: not-allowed; opacity: .35; }
+
+    @media (prefers-reduced-motion: reduce) {
+      *, *::before, *::after { transition-duration: .001ms !important; animation-duration: .001ms !important; }
+    }
+  </style>
+</head>
+<body>
+  <main class="simulator">
+    <section class="prediction-screen" id="predictionScreen" aria-labelledby="predictionTitle">
+      <header class="prediction-head">
+        <div>
+          <h1 id="predictionTitle">熱物體一定係淨輻射體？</h1>
+          <p>先憑直覺判斷；進入模擬後再用功率證據驗證。</p>
+        </div>
+        <span class="prediction-tag">進場預測</span>
+      </header>
+      <div class="prediction-content">
+        <p class="prediction-prompt">只考慮熱輻射，判斷薄餅此刻嘅淨角色。</p>
+        <div class="scenario-grid">
+          <fieldset class="scenario">
+            <legend class="scenario-number">情境 01</legend>
+            <h2>一件 80°C 薄餅放喺<br><span class="temperature-highlight">25°C 房間</span></h2>
+            <p>物體溫度相同，今次環境較冷。</p>
+            <div class="choices">
+              <label class="choice"><input type="radio" name="roomPrediction" value="emitter">淨輻射體</label>
+              <label class="choice"><input type="radio" name="roomPrediction" value="absorber">淨吸收體</label>
+            </div>
+          </fieldset>
+          <fieldset class="scenario">
+            <legend class="scenario-number">情境 02</legend>
+            <h2>同一件 80°C 薄餅放入<br><span class="temperature-highlight">200°C 焗爐</span></h2>
+            <p>物體仍然很熱，但今次環境更熱。</p>
+            <div class="choices">
+              <label class="choice"><input type="radio" name="ovenPrediction" value="emitter">淨輻射體</label>
+              <label class="choice"><input type="radio" name="ovenPrediction" value="absorber">淨吸收體</label>
+            </div>
+          </fieldset>
+        </div>
+      </div>
+      <footer class="prediction-actions">
+        <p>答案唔會即時公布；請用主模擬嘅三條功率柱自行判斷。</p>
+        <button class="continue-button" id="continueButton" type="button" disabled>進入模擬</button>
+      </footer>
+    </section>
+
+    <section id="simulationScreen" hidden>
+      <header class="topbar">
+        <div class="title-wrap"><h1>熱輻射收支</h1><span class="subtitle">物體一直放出，亦一直吸收</span></div>
+        <div class="top-actions"><span class="stage-badge" id="stageBadge">淨輻射體</span><a class="home-link" href="../../index.html">返回模擬器目錄</a></div>
+      </header>
+
+      <section class="workspace">
+        <article class="scene-card" aria-label="金屬球與恆溫環境的雙向熱輻射動畫">
+          <div class="panel-head">
+            <span class="panel-title">恆溫輻射腔</span>
+            <div class="legend" aria-label="動畫圖例"><span class="incoming">環境送入</span><span class="outgoing">球面放出</span></div>
+          </div>
+          <div class="scene-wrap">
+            <canvas id="radiationCanvas" role="img" aria-label="環境輻射波向內傳到金屬球，同時金屬球輻射波向外傳到環境"></canvas>
+            <div class="scene-label environment-label"><small>環境｜固定</small><strong id="environmentSceneValue">25°C</strong></div>
+            <div class="scene-label object-label"><small>金屬球｜目前</small><strong id="objectSceneValue">80.0°C</strong></div>
+            <span class="model-flag">只考慮熱輻射</span>
+          </div>
+        </article>
+
+        <aside class="evidence-card" aria-label="三條熱輻射功率柱">
+          <div class="panel-head"><span class="panel-title">功率收支</span><span class="scale-note" id="scaleNote">±0 W</span></div>
+          <div class="bar-plot">
+            <div class="zero-line"></div>
+            <div class="bar-column">
+              <div class="bar-track"><span class="bar-fill emit up" id="emitBar"></span></div>
+              <div class="bar-meta"><span class="bar-name">球面放出</span><strong class="bar-value" id="emitValue">0.0 W</strong></div>
+            </div>
+            <div class="bar-column">
+              <div class="bar-track"><span class="bar-fill absorb up" id="absorbBar"></span></div>
+              <div class="bar-meta"><span class="bar-name">環境送入</span><strong class="bar-value" id="absorbValue">0.0 W</strong></div>
+            </div>
+            <div class="bar-column">
+              <div class="bar-track"><span class="bar-fill net up" id="netBar"></span></div>
+              <div class="bar-meta"><span class="bar-name">淨功率</span><strong class="bar-value" id="netValue">0.0 W</strong></div>
+            </div>
+          </div>
+          <div class="balance-card" aria-live="polite">
+            <strong class="role" id="roleText">淨輻射體</strong>
+            <span class="balance-equation" id="balanceEquation">0.0 − 0.0 = 0.0 W</span>
+            <span class="role-note" id="roleNote">放出較多，金屬球降溫。</span>
+          </div>
+        </aside>
+      </section>
+
+      <section class="controls" aria-label="模擬控制">
+        <div class="control">
+          <label for="objectTemperature"><span>物體初始溫度</span><output id="objectTemperatureOut">80°C</output></label>
+          <input id="objectTemperature" type="range" min="-20" max="250" step="1" value="80">
+          <div class="range-note">調校後會暫停並回到新初始狀態</div>
+        </div>
+        <div class="control">
+          <label for="environmentTemperature"><span>環境溫度</span><output id="environmentTemperatureOut">25°C</output></label>
+          <input id="environmentTemperature" type="range" min="-20" max="250" step="1" value="25">
+          <div class="range-note">開始後維持固定｜大型熱庫</div>
+        </div>
+        <button class="action-button start-button" id="startButton" type="button">開始</button>
+        <button class="action-button reset-button" id="resetButton" type="button">重設</button>
+      </section>
+
+      <footer class="footer">
+        <span><strong>觀察：</strong>雙向輻射一直存在；比較兩邊功率先知道淨方向。</span>
+        <span class="footer-equation">\(P_{\mathrm{net}}=\varepsilon\sigma A(T_{\text{物體}}^4-T_{\text{環境}}^4)\)</span>
+      </footer>
+    </section>
+  </main>
+
+  <script src="model.js"></script>
+  <script>
+    "use strict";
+
+    const $ = (id) => document.getElementById(id);
+    const state = { initialObject: 80, object: 80, environment: 25, running: false, lastTime: 0 };
+    const reducedMotion = matchMedia("(prefers-reduced-motion: reduce)").matches;
+    const roleCopy = {
+      emitter: ["淨輻射體", "放出較多，金屬球降溫。"],
+      absorber: ["淨吸收體", "吸收較多，金屬球升溫。"],
+      equilibrium: ["輻射平衡", "雙向功率相等，淨傳熱為零。"]
+    };
+    const canvas = $("radiationCanvas");
+    const context = canvas.getContext("2d");
+    const rayField = { incoming: [], outgoing: [], nextIncoming: 0, nextOutgoing: 0 };
+
+    function resetRays() {
+      rayField.incoming.length = 0;
+      rayField.outgoing.length = 0;
+      rayField.nextIncoming = 0;
+      rayField.nextOutgoing = 0;
+    }
+
+    function setupCanvas() {
+      const bounds = canvas.getBoundingClientRect();
+      const ratio = devicePixelRatio || 1;
+      canvas.width = Math.round(bounds.width * ratio);
+      canvas.height = Math.round(bounds.height * ratio);
+      context.setTransform(ratio, 0, 0, ratio, 0, 0);
+      resetRays();
+    }
+
+    function temperatureColor(celsius, lightness = 58) {
+      const ratio = Math.max(0, Math.min(1, (celsius + 20) / 270));
+      return `hsl(${195 - ratio * 183} 82% ${lightness}%)`;
+    }
+
+    function drawArrow(x, y, angle, color, alpha) {
+      context.save();
+      context.translate(x, y);
+      context.rotate(angle);
+      context.globalAlpha = alpha;
+      context.fillStyle = color;
+      context.beginPath();
+      context.moveTo(4.5, 0);
+      context.lineTo(-3, -2.6);
+      context.lineTo(-2, 0);
+      context.lineTo(-3, 2.6);
+      context.closePath();
+      context.fill();
+      context.restore();
+    }
+
+    function randomEdgePoint(width, height) {
+      const distance = Math.random() * 2 * (width + height);
+      if (distance < width) return { x: distance, y: 0 };
+      if (distance < width + height) return { x: width, y: distance - width };
+      if (distance < 2 * width + height) return { x: 2 * width + height - distance, y: height };
+      return { x: 0, y: 2 * (width + height) - distance };
+    }
+
+    function distanceToEdge(cx, cy, dx, dy, width, height) {
+      const horizontal = dx > 0 ? (width - cx) / dx : dx < 0 ? -cx / dx : Infinity;
+      const vertical = dy > 0 ? (height - cy) / dy : dy < 0 ? -cy / dy : Infinity;
+      return Math.min(horizontal, vertical);
+    }
+
+    function createRay(kind, width, height, cx, cy, sphereRadius) {
+      if (kind === "outgoing") {
+        const angle = Math.random() * Math.PI * 2;
+        const dx = Math.cos(angle);
+        const dy = Math.sin(angle);
+        const edgeDistance = distanceToEdge(cx, cy, dx, dy, width, height);
+        return {
+          kind,
+          x: cx + dx * (sphereRadius + 4),
+          y: cy + dy * (sphereRadius + 4),
+          dx,
+          dy,
+          length: edgeDistance - sphereRadius - 4,
+          travelled: 0,
+          segmentLength: 26 + Math.random() * 14
+        };
+      }
+
+      const start = randomEdgePoint(width, height);
+      const targetAngle = Math.random() * Math.PI * 2;
+      const targetRadius = Math.sqrt(Math.random()) * sphereRadius * .42;
+      const targetX = cx + Math.cos(targetAngle) * targetRadius;
+      const targetY = cy + Math.sin(targetAngle) * targetRadius;
+      const deltaX = targetX - start.x;
+      const deltaY = targetY - start.y;
+      const length = Math.hypot(deltaX, deltaY);
+      return {
+        kind,
+        x: start.x,
+        y: start.y,
+        dx: deltaX / length,
+        dy: deltaY / length,
+        length,
+        travelled: 0,
+        segmentLength: 26 + Math.random() * 14
+      };
+    }
+
+    function rayRate(power) {
+      return 2.2 + 11.8 * Math.max(0, Math.min(1, power / RadiationModel.POWER_SCALE));
+    }
+
+    function randomDelay(rate) {
+      return -Math.log(Math.max(Number.EPSILON, Math.random())) / rate;
+    }
+
+    function updateMovingRays(dt, powers, width, height, cx, cy, sphereRadius) {
+      for (const rays of [rayField.incoming, rayField.outgoing]) {
+        for (const ray of rays) ray.travelled += 165 * dt;
+        for (let index = rays.length - 1; index >= 0; index -= 1) {
+          if (rays[index].travelled >= rays[index].length) rays.splice(index, 1);
+        }
+      }
+
+      const incomingRate = rayRate(powers.absorbed);
+      const outgoingRate = rayRate(powers.emitted);
+      rayField.nextIncoming -= dt;
+      rayField.nextOutgoing -= dt;
+      for (let spawned = 0; rayField.nextIncoming <= 0 && spawned < 8; spawned += 1) {
+        rayField.incoming.push(createRay("incoming", width, height, cx, cy, sphereRadius));
+        rayField.nextIncoming += randomDelay(incomingRate);
+      }
+      for (let spawned = 0; rayField.nextOutgoing <= 0 && spawned < 8; spawned += 1) {
+        rayField.outgoing.push(createRay("outgoing", width, height, cx, cy, sphereRadius));
+        rayField.nextOutgoing += randomDelay(outgoingRate);
+      }
+    }
+
+    function updateStaticRays(powers, width, height, cx, cy, sphereRadius) {
+      const targets = {
+        incoming: 4 + Math.round(powers.absorbed / RadiationModel.POWER_SCALE * 10),
+        outgoing: 4 + Math.round(powers.emitted / RadiationModel.POWER_SCALE * 10)
+      };
+      for (const kind of ["incoming", "outgoing"]) {
+        const rays = rayField[kind];
+        while (rays.length < targets[kind]) {
+          const ray = createRay(kind, width, height, cx, cy, sphereRadius);
+          ray.travelled = Math.random() * ray.length;
+          rays.push(ray);
+        }
+        rays.length = Math.min(rays.length, targets[kind]);
+      }
+    }
+
+    function updateRays(dt, powers, width, height, cx, cy, sphereRadius) {
+      if (reducedMotion) updateStaticRays(powers, width, height, cx, cy, sphereRadius);
+      else updateMovingRays(dt, powers, width, height, cx, cy, sphereRadius);
+    }
+
+    function drawRay(ray) {
+      const headDistance = Math.min(ray.travelled, ray.length);
+      const tailDistance = Math.max(0, headDistance - ray.segmentLength);
+      const headX = ray.x + ray.dx * headDistance;
+      const headY = ray.y + ray.dy * headDistance;
+      const tailX = ray.x + ray.dx * tailDistance;
+      const tailY = ray.y + ray.dy * tailDistance;
+      const color = ray.kind === "outgoing" ? "#ff9f5a" : "#62e7f2";
+      const transparent = ray.kind === "outgoing" ? "rgba(255,159,90,0)" : "rgba(98,231,242,0)";
+      const gradient = context.createLinearGradient(tailX, tailY, headX, headY);
+      gradient.addColorStop(0, transparent);
+      gradient.addColorStop(1, color);
+      context.save();
+      context.strokeStyle = gradient;
+      context.lineWidth = 1.35;
+      context.lineCap = "round";
+      context.shadowColor = color;
+      context.shadowBlur = 5;
+      context.beginPath();
+      context.moveTo(tailX, tailY);
+      context.lineTo(headX, headY);
+      context.stroke();
+      context.restore();
+      drawArrow(headX, headY, Math.atan2(ray.dy, ray.dx), color, .85);
+    }
+
+    function drawScene() {
+      const width = canvas.clientWidth;
+      const height = canvas.clientHeight;
+      const cx = width * 0.52;
+      const cy = height * 0.47;
+      const sphereRadius = 58;
+      context.clearRect(0, 0, width, height);
+
+      const field = context.createRadialGradient(cx, cy, sphereRadius, cx, cy, Math.max(width, height) * .72);
+      field.addColorStop(0, "rgba(255,255,255,.01)");
+      field.addColorStop(1, temperatureColor(state.environment, 23).replace("hsl", "hsla").replace(")", " / .32)"));
+      context.fillStyle = field;
+      context.fillRect(0, 0, width, height);
+      for (const ray of rayField.incoming) drawRay(ray);
+      for (const ray of rayField.outgoing) drawRay(ray);
+
+      const sphere = context.createRadialGradient(cx - 20, cy - 24, 8, cx, cy, sphereRadius);
+      sphere.addColorStop(0, "#f9fdff");
+      sphere.addColorStop(.22, temperatureColor(state.object, 70));
+      sphere.addColorStop(1, temperatureColor(state.object, 31));
+      context.save();
+      context.fillStyle = sphere;
+      context.shadowColor = temperatureColor(state.object, 58);
+      context.shadowBlur = 24;
+      context.beginPath();
+      context.arc(cx, cy, sphereRadius, 0, Math.PI * 2);
+      context.fill();
+      context.restore();
+      context.strokeStyle = "rgba(255,255,255,.72)";
+      context.lineWidth = 1.5;
+      context.beginPath();
+      context.arc(cx, cy, sphereRadius, 0, Math.PI * 2);
+      context.stroke();
+    }
+
+    function setBar(element, value, direction) {
+      const percent = Math.min(50, Math.abs(value) / RadiationModel.POWER_SCALE * 50);
+      element.classList.toggle("down", direction === "down");
+      element.classList.toggle("up", direction !== "down");
+      element.style.height = `${percent}%`;
+    }
+
+    function formatPower(value) {
+      const normalized = Math.abs(value) < 0.05 ? 0 : value;
+      return `${normalized.toFixed(1)} W`;
+    }
+
+    function render() {
+      const powers = RadiationModel.powers(state.object, state.environment);
+      const role = RadiationModel.role(state.object, state.environment);
+      const [roleText, roleNote] = roleCopy[role];
+
+      $("objectTemperatureOut").textContent = `${state.initialObject}°C`;
+      $("environmentTemperatureOut").textContent = `${state.environment}°C`;
+      $("objectSceneValue").textContent = `${state.object.toFixed(1)}°C`;
+      $("environmentSceneValue").textContent = `${state.environment}°C`;
+      $("stageBadge").textContent = roleText;
+      $("roleText").textContent = roleText;
+      $("roleNote").textContent = roleNote;
+      $("emitValue").textContent = formatPower(powers.emitted);
+      $("absorbValue").textContent = formatPower(powers.absorbed);
+      $("netValue").textContent = formatPower(powers.net);
+      $("balanceEquation").textContent = `${powers.emitted.toFixed(1)} − ${powers.absorbed.toFixed(1)} = ${Math.abs(powers.net) < .05 ? "0.0" : powers.net.toFixed(1)} W`;
+      $("scaleNote").textContent = `共同尺度 ±${RadiationModel.POWER_SCALE.toFixed(0)} W`;
+      setBar($("emitBar"), powers.emitted, "up");
+      setBar($("absorbBar"), powers.absorbed, "up");
+      setBar($("netBar"), powers.net, powers.net < 0 ? "down" : "up");
+      $("startButton").disabled = role === "equilibrium";
+      $("startButton").textContent = role === "equilibrium" ? "已達平衡" : state.running ? "暫停" : "開始";
+      return powers;
+    }
+
+    function resetToInputs() {
+      state.initialObject = Number($("objectTemperature").value);
+      state.object = state.initialObject;
+      state.environment = Number($("environmentTemperature").value);
+      state.running = false;
+      render();
+    }
+
+    function animate(time) {
+      const elapsed = state.lastTime ? Math.min(.05, (time - state.lastTime) / 1000) : 0;
+      state.lastTime = time;
+      if (state.running) {
+        state.object = RadiationModel.stepTemperature(state.object, state.environment, elapsed);
+        if (RadiationModel.role(state.object, state.environment) === "equilibrium") state.running = false;
+      }
+      if (!$("simulationScreen").hidden) {
+        const powers = render();
+        const width = canvas.clientWidth;
+        const height = canvas.clientHeight;
+        const cx = width * .52;
+        const cy = height * .47;
+        updateRays(elapsed, powers, width, height, cx, cy, 58);
+        drawScene();
+      }
+      requestAnimationFrame(animate);
+    }
+
+    document.querySelectorAll('input[name="roomPrediction"], input[name="ovenPrediction"]').forEach((input) => {
+      input.addEventListener("change", () => {
+        $("continueButton").disabled = !document.querySelector('input[name="roomPrediction"]:checked') || !document.querySelector('input[name="ovenPrediction"]:checked');
+      });
+    });
+    $("continueButton").addEventListener("click", () => {
+      $("predictionScreen").hidden = true;
+      $("simulationScreen").hidden = false;
+      setupCanvas();
+      render();
+    });
+    $("objectTemperature").addEventListener("input", resetToInputs);
+    $("environmentTemperature").addEventListener("input", resetToInputs);
+    $("startButton").addEventListener("click", () => { state.running = !state.running; render(); });
+    $("resetButton").addEventListener("click", resetToInputs);
+    addEventListener("resize", setupCanvas);
+    document.addEventListener("DOMContentLoaded", () => {
+      if (window.renderMathInElement) {
+        renderMathInElement(document.body, { delimiters: [{ left: "\\(", right: "\\)", display: false }], throwOnError: false });
+      }
+      requestAnimationFrame(animate);
+    });
+  </script>
+</body>
+</html>
