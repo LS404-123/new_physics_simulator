@@ -1,0 +1,895 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=1140, initial-scale=1">
+  <title>熱如何移動｜傳導與對流</title>
+  <link rel="stylesheet" href="../thermometer-calibration-slope/katex/katex.min.css">
+  <script defer src="../thermometer-calibration-slope/katex/katex.min.js"></script>
+  <script defer src="../thermometer-calibration-slope/katex/contrib/auto-render.min.js"></script>
+  <style>
+    :root {
+      --ink: #17212b;
+      --muted: #607080;
+      --paper: #f4f8fb;
+      --panel: #ffffff;
+      --line: #cbd8df;
+      --cold: #168acb;
+      --cold-bright: #38bdf8;
+      --warm: #f59e0b;
+      --hot: #e84b38;
+      --hot-bright: #ff6b57;
+      --hot-ui: #bd3326;
+      --teal: #087f79;
+      --teal-light: #e0f2f1;
+      --navy: #0f2738;
+      --focus: #f1a900;
+    }
+
+    * { box-sizing: border-box; }
+    [hidden] { display: none !important; }
+    html, body {
+      width: 100%;
+      min-width: 1140px;
+      min-height: 768px;
+      margin: 0;
+      overflow: hidden;
+      color: var(--ink);
+      background: #cddbe3;
+      font-family: "Microsoft JhengHei", "Noto Sans TC", sans-serif;
+    }
+    body { display: grid; place-items: center; }
+    button, input, select { font: inherit; }
+    button, input[type="range"], select { cursor: pointer; }
+    button:focus-visible, input:focus-visible, select:focus-visible, a:focus-visible {
+      outline: 3px solid var(--focus);
+      outline-offset: 2px;
+    }
+
+    .simulator {
+      width: 1140px;
+      height: 768px;
+      overflow: hidden;
+      background-color: var(--paper);
+      background-image: radial-gradient(circle at 1px 1px, rgba(15, 39, 56, 0.08) 1px, transparent 0);
+      background-size: 18px 18px;
+      box-shadow: 0 20px 55px rgba(15, 39, 56, 0.22);
+      display: flex;
+      flex-direction: column;
+    }
+
+    .topbar {
+      height: 56px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0 22px;
+      color: #fff;
+      background: var(--navy);
+    }
+    .brand { display: flex; align-items: baseline; gap: 12px; }
+    h1 { margin: 0; font: 800 22px Georgia, "Times New Roman", serif; letter-spacing: .04em; }
+    .brand small { color: #b8d3df; font-size: 13px; }
+    .home-link { color: #d7e8ef; text-decoration: none; font-size: 13px; transition: color 0.15s; }
+    .home-link:hover { color: #38bdf8; }
+
+    .mode-strip {
+      height: 64px;
+      display: grid;
+      grid-template-columns: 260px minmax(0, 1fr);
+      align-items: center;
+      gap: 20px;
+      padding: 6px 20px;
+      border-bottom: 1px solid var(--line);
+      background: rgba(255, 255, 255, 0.94);
+    }
+    .mode-switch {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      padding: 3px;
+      border: 1px solid #9db2be;
+      border-radius: 9px;
+      background: #e5edf2;
+    }
+    .mode-button {
+      min-height: 40px;
+      border: 0;
+      border-radius: 7px;
+      color: var(--muted);
+      background: transparent;
+      font-weight: 800;
+      font-size: 14px;
+      transition: all 0.15s ease;
+    }
+    .mode-button[aria-pressed="true"] { color: #fff; background: var(--navy); }
+    
+    .mode-summary { min-width: 0; }
+    .mode-summary strong { display: block; margin-bottom: 2px; font-size: 15px; color: var(--navy); }
+    .mode-summary span { color: var(--muted); font-size: 12px; }
+
+    .workspace {
+      height: 486px;
+      display: grid;
+      grid-template-columns: 754px 354px;
+      gap: 12px;
+      padding: 10px 16px 8px;
+    }
+    .observation-window {
+      position: relative;
+      overflow: hidden;
+      border: 2px solid var(--navy);
+      border-radius: 12px;
+      background: #071926;
+      box-shadow: inset 0 0 35px rgba(0,0,0,.35);
+    }
+    #simulationCanvas { display: block; width: 750px; height: 462px; }
+    
+    .canvas-hud {
+      position: absolute;
+      top: 10px;
+      right: 12px;
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+      align-items: flex-end;
+    }
+    .hud-badge {
+      background: rgba(15, 39, 56, 0.85);
+      border: 1px solid rgba(255,255,255,0.2);
+      border-radius: 6px;
+      padding: 3px 9px;
+      color: #e5f4f9;
+      font: 700 12px Consolas, monospace;
+      backdrop-filter: blur(4px);
+    }
+
+    .evidence-panel {
+      display: grid;
+      grid-template-rows: 145px minmax(0, 1fr);
+      gap: 10px;
+      min-width: 0;
+    }
+    .card {
+      border: 1px solid var(--line);
+      border-radius: 10px;
+      background: rgba(255,255,255,.96);
+      box-shadow: 0 4px 12px rgba(15, 39, 56, 0.06);
+    }
+    .prediction { padding: 10px 12px; }
+    .eyebrow { color: var(--teal); font: 800 11px Consolas, monospace; letter-spacing: .1em; text-transform: uppercase; }
+    .prediction label { display: block; margin: 4px 0 6px; font-size: 13px; font-weight: 800; color: var(--navy); line-height: 1.3; }
+    .prediction-row { display: grid; grid-template-columns: 1fr 80px; gap: 6px; }
+    select {
+      min-width: 0;
+      height: 36px;
+      padding: 0 8px;
+      border: 1px solid #9db2be;
+      border-radius: 6px;
+      color: var(--ink);
+      background: #fff;
+      font-size: 12px;
+    }
+    .check-button {
+      border: 0;
+      border-radius: 6px;
+      color: #fff;
+      background: var(--teal);
+      font-weight: 800;
+      font-size: 13px;
+      transition: background 0.15s;
+    }
+    .check-button:hover:not(:disabled) { background: #066b66; }
+    .check-button:disabled { cursor: not-allowed; opacity: .4; }
+    .feedback { margin: 6px 0 0; color: var(--teal); font-size: 12px; font-weight: 700; line-height: 1.35; }
+    .feedback.error { color: var(--hot-ui); }
+
+    .chart-card { padding: 12px 14px 10px; overflow: hidden; display: flex; flex-direction: column; }
+    .chart-card h2 { margin: 0 0 6px; font-size: 14px; color: var(--navy); }
+    #evidenceChart { display: block; width: 324px; height: 215px; border-radius: 6px; flex: 1; }
+    .convection-chart { flex: 1; min-height: 0; }
+    .chart-readout { display: flex; align-items: flex-end; justify-content: space-between; margin: 0 2px 4px 38px; }
+    .current-reading small { display: block; color: var(--muted); font-size: 10px; font-weight: 700; }
+    .current-reading strong { color: var(--navy); font: 800 22px Consolas, monospace; }
+    .temp-change { margin-bottom: 2px; color: var(--hot-ui); font: 800 11px Consolas, monospace; }
+    #convectionGraph { display: block; width: 324px; height: 176px; overflow: visible; }
+    .graph-grid { stroke: #dce6eb; stroke-width: 1; }
+    .graph-axis { stroke: #8ba3af; stroke-width: 1.4; }
+    .graph-label { fill: var(--muted); font: 10px Consolas, monospace; }
+    .graph-axis-label { fill: var(--navy); font: 700 10px "Microsoft JhengHei", sans-serif; }
+    .temperature-area { fill: url(#temperatureArea); }
+    .temperature-line { fill: none; stroke: var(--hot); stroke-width: 3; stroke-linecap: round; stroke-linejoin: round; vector-effect: non-scaling-stroke; }
+    .current-guide { stroke: var(--hot); stroke-width: 1; stroke-dasharray: 3 4; opacity: .38; }
+    .temperature-point { fill: var(--hot-bright); stroke: #fff; stroke-width: 2; }
+    .start-point { fill: var(--cold); stroke: #fff; stroke-width: 1.5; }
+    .chart-note { margin: 6px 2px 0; color: var(--muted); font-size: 11px; line-height: 1.35; }
+
+    .controls {
+      height: 62px;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 6px 18px;
+      border-top: 1px solid var(--line);
+      background: rgba(255,255,255,.97);
+    }
+    .primary-button, .slow-button, .reset-button {
+      min-height: 40px;
+      padding: 0 18px;
+      border-radius: 7px;
+      font-weight: 800;
+      font-size: 13px;
+      transition: all 0.15s ease;
+    }
+    .primary-button { border: 0; color: #fff; background: var(--hot-ui); }
+    .primary-button:hover:not(:disabled) { background: #a52b20; }
+    .primary-button:disabled { cursor: not-allowed; opacity: .38; }
+
+    .control { display: flex; align-items: center; gap: 6px; font-size: 12px; }
+    .control label { font-size: 12px; font-weight: 800; white-space: nowrap; color: var(--navy); }
+    .control output { text-align: right; color: var(--teal); font: 800 12px Consolas, monospace; min-width: 32px; }
+    input[type="range"] { height: 28px; accent-color: var(--hot); cursor: pointer; }
+    .slow-button { border: 1px solid #8ba3af; color: var(--navy); background: #edf3f6; font-size: 12px; }
+    .slow-button[aria-pressed="true"] { color: #fff; border-color: var(--teal); background: var(--teal); }
+    .reset-button { border: 1px solid #8ba3af; color: var(--navy); background: transparent; font-size: 12px; }
+    .reset-button:hover { background: #edf3f6; }
+    .concept-container { flex: 1; min-width: 0; }
+    .concept { margin: 0; color: var(--navy); font-size: 12px; line-height: 1.35; }
+
+    .footer {
+      height: 38px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0 18px;
+      color: #dcebf1;
+      background: var(--navy);
+      font-size: 12px;
+    }
+    .legend { display: flex; gap: 14px; }
+    .legend span::before { content: ""; display: inline-block; width: 8px; height: 8px; margin-right: 5px; border-radius: 50%; }
+    .legend .cold::before { background: var(--cold-bright); }
+    .legend .hot::before { background: var(--hot-bright); }
+    .legend .vector::before { background: rgba(255,255,255,0.85); }
+
+    @media (prefers-reduced-motion: reduce) {
+      *, *::before, *::after { transition-duration: .001ms !important; }
+    }
+  </style>
+</head>
+<body>
+  <main class="simulator">
+    <header class="topbar">
+      <div class="brand"><h1>熱如何移動</h1><small>傳導 × 對流 物理觀察室</small></div>
+      <a class="home-link" href="../../">← 返回模擬器目錄</a>
+    </header>
+
+    <section class="mode-strip" aria-label="熱傳模式">
+      <div class="mode-switch">
+        <button class="mode-button" data-mode="conduction" aria-pressed="true" type="button">傳導模式</button>
+        <button class="mode-button" data-mode="convection" aria-pressed="false" type="button">對流模式</button>
+      </div>
+      <div class="mode-summary">
+        <strong id="modeTitle">粒子逐粒推撞，能量向前傳遞</strong>
+        <span id="modeSubtitle">左粒子接近右粒子後，右粒子先開始向右移動</span>
+      </div>
+    </section>
+
+    <section class="workspace">
+      <div class="observation-window">
+        <canvas id="simulationCanvas" width="750" height="462" aria-label="熱傳連續流場與示蹤粒子動畫"></canvas>
+        <div class="canvas-hud">
+          <span class="hud-badge" id="gravityBadge">重力 \(g \downarrow\)</span>
+        </div>
+      </div>
+
+      <aside class="evidence-panel" aria-label="預測及物理證據">
+        <section class="card prediction">
+          <span class="eyebrow">觀察前預測</span>
+          <label for="prediction" id="predictionLabel">加熱容器底部中央後，暖流會最先往哪裏移動？</label>
+          <div class="prediction-row">
+            <select id="prediction"></select>
+            <button class="check-button" id="checkButton" type="button" disabled>檢查</button>
+          </div>
+          <p class="feedback" id="feedback">先選預測答案，才顯示物理證據。</p>
+        </section>
+
+        <section class="card chart-card">
+          <h2 id="chartTitle">整體液體平均溫度—時間關係圖 \(T-t\)</h2>
+          <canvas id="evidenceChart" width="324" height="215" aria-label="同步物理量圖表"></canvas>
+          <div class="convection-chart" id="convectionChart" hidden>
+            <div class="chart-readout">
+              <span class="current-reading"><small>目前平均水溫</small><strong id="currentTemp">20.0°C</strong></span>
+              <span class="temp-change" id="tempChange">較開始 +0.0°C</span>
+            </div>
+            <svg id="convectionGraph" viewBox="0 0 324 176" role="img" aria-label="整體液體平均溫度隨時間變化"></svg>
+          </div>
+          <p class="chart-note" id="chartNote">底部持續供熱使整體水體累積蓄熱，熱量透過對流與擴散傳遍全體，水溫持續上升。</p>
+        </section>
+      </aside>
+    </section>
+
+    <section class="controls" aria-label="模擬控制">
+      <button class="primary-button" id="runButton" type="button">開始</button>
+      <div class="control" id="heaterControl">
+        <label for="heater">加熱強度</label>
+        <input id="heater" type="range" min="0" max="100" value="75">
+        <output id="heaterOutput">75%</output>
+      </div>
+      <div class="control">
+        <label for="speed">速度</label>
+        <input id="speed" type="range" min="25" max="150" value="100">
+        <output id="speedOutput">1.00×</output>
+      </div>
+      <button class="slow-button" id="slowButton" aria-pressed="false" type="button">慢動作</button>
+      <div class="concept-container">
+        <p class="concept" id="concept">底部熱水團受淨浮力上升，形成連續熱羽流並帶動兩側冷水下沉，使整體水體平穩升溫。</p>
+      </div>
+      <button class="reset-button" id="resetButton" type="button">重設</button>
+    </section>
+
+    <footer class="footer">
+      <span id="status">點擊「開始」或完成右上角預測觀察流體對流現象。</span>
+      <div class="legend">
+        <span class="cold">低溫 (20°C)</span>
+        <span class="hot">高溫 (80°C+)</span>
+        <span class="vector">流體示蹤水微團</span>
+      </div>
+    </footer>
+  </main>
+
+  <script src="model.js?v=35"></script>
+  <script>
+    "use strict";
+
+    const $ = (id) => document.getElementById(id);
+    const canvas = $("simulationCanvas");
+    const context = canvas.getContext("2d");
+    const chart = $("evidenceChart");
+    const chartContext = chart.getContext("2d");
+    const convectionGraph = $("convectionGraph");
+
+    // 離屏連續熱場渲染 Canvas (36 x 24)
+    const offscreenCanvas = document.createElement("canvas");
+    offscreenCanvas.width = 36;
+    offscreenCanvas.height = 24;
+    const offscreenContext = offscreenCanvas.getContext("2d");
+    const offscreenImage = offscreenContext.createImageData(36, 24);
+
+    const modes = {
+      conduction: {
+        title: "粒子逐粒推撞，能量向前傳遞",
+        subtitle: "左粒子接近右粒子後，右粒子先開始向右移動",
+        question: "加熱固體金屬棒左端後，哪一列粒子會最先加劇振動？",
+        options: [["", "請先預測"], ["first", "最左第一列"], ["middle", "中間第九列"], ["last", "最右第十七列"]],
+        answer: "first",
+        feedback: "正確！第一列直接接觸熱源先吸熱加劇振動，再逐粒碰撞向右傳遞熱能。",
+        hint: "熱傳導依靠相鄰微觀粒子碰撞，能量由熱源處逐步向外擴散。"
+      },
+      convection: {
+        title: "底部加熱，流體受熱膨脹形成持續對流循環",
+        subtitle: "暖而密度低的流體上升；冷而密度高的流體下沉補位",
+        question: "加熱容器底部中央後，暖流會最先往哪裏移動？",
+        options: [["", "請先預測"], ["up", "由中央向上升起"], ["side", "直接水平向兩側擴散"], ["down", "向容器底部下沉"]],
+        answer: "up",
+        feedback: "正確！底部加熱使流體膨脹、密度下降，在重力場中受向上浮力垂直升起，帶動全體水循環升溫。",
+        hint: "液體受熱膨脹後密度變小，在重力場中會受向上浮力。"
+      }
+    };
+
+    function createConductionLattice() {
+      return {
+        columns: 17,
+        rows: 6,
+        displacements: Array(102).fill(0),
+        velocities: Array(102).fill(0),
+        temperatures: Array(102).fill(20),
+        pulses: []
+      };
+    }
+
+    const state = {
+      mode: "conduction",
+      running: false,
+      slow: false,
+      heaterPower: 0.75,
+      speed: 1,
+      lastTime: 0,
+      modes: {
+        conduction: { revealed: false, prediction: "", elapsed: 0, ...createConductionLattice() },
+        convection: {
+          revealed: false,
+          prediction: "",
+          elapsed: 0,
+          grid: HeatTransferModel.createFluidGrid(36, 24),
+          particles: HeatTransferModel.createFluidParticles(200),
+          history: [{ time: 0, temp: 20 }]
+        }
+      }
+    };
+
+    function currentModeState() {
+      return state.modes[state.mode];
+    }
+
+    // 全光譜高對比度溫度色彩映射
+    const colourStops = [
+      [20, [18, 140, 215]],   // 20°C: 鮮明亮藍
+      [32, [20, 184, 166]],   // 32°C: 青綠
+      [45, [245, 158, 11]],   // 45°C: 明亮金黃
+      [60, [249, 115, 22]],   // 60°C: 亮橙
+      [75, [239, 68, 68]],    // 75°C: 熾熱鮮紅
+      [90, [255, 30, 20]]     // 90°C: 極熱紅
+    ];
+
+    function getRGBAtTemp(temperature) {
+      let lower = colourStops[0];
+      let upper = colourStops[colourStops.length - 1];
+      for (let index = 1; index < colourStops.length; index += 1) {
+        if (temperature <= colourStops[index][0]) { lower = colourStops[index - 1]; upper = colourStops[index]; break; }
+      }
+      const ratio = HeatTransferModel.clamp((temperature - lower[0]) / (upper[0] - lower[0]), 0, 1);
+      return [
+        Math.round(lower[1][0] + (upper[1][0] - lower[1][0]) * ratio),
+        Math.round(lower[1][1] + (upper[1][1] - lower[1][1]) * ratio),
+        Math.round(lower[1][2] + (upper[1][2] - lower[1][2]) * ratio)
+      ];
+    }
+
+    function temperatureColour(temperature, alpha = 1) {
+      const rgb = getRGBAtTemp(temperature);
+      return `rgba(${rgb[0]},${rgb[1]},${rgb[2]},${alpha})`;
+    }
+
+    function drawArrow(x1, y1, x2, y2, colour, width = 2, headSize = 7) {
+      const dx = x2 - x1;
+      const dy = y2 - y1;
+      const len = Math.hypot(dx, dy);
+      if (len < 2) return;
+      const angle = Math.atan2(dy, dx);
+      context.strokeStyle = colour;
+      context.fillStyle = colour;
+      context.lineWidth = width;
+      context.beginPath();
+      context.moveTo(x1, y1);
+      context.lineTo(x2, y2);
+      context.stroke();
+      context.beginPath();
+      context.moveTo(x2, y2);
+      context.lineTo(x2 - headSize * Math.cos(angle - 0.5), y2 - headSize * Math.sin(angle - 0.5));
+      context.lineTo(x2 - headSize * Math.cos(angle + 0.5), y2 - headSize * Math.sin(angle + 0.5));
+      context.closePath();
+      context.fill();
+    }
+
+    function stepConduction(dt) {
+      const conduction = state.modes.conduction;
+      const result = HeatTransferModel.stepConduction(conduction, state.heaterPower, dt, conduction.elapsed);
+      conduction.displacements = result.displacements;
+      conduction.velocities = result.velocities;
+      conduction.temperatures = result.temperatures;
+      result.interactions.forEach((interaction) => {
+        if (!conduction.pulses.some((pulse) => pulse.row === interaction.row && pulse.column === interaction.column)) {
+          conduction.pulses.push({ ...interaction, age: 0 });
+        }
+      });
+      conduction.pulses.forEach((pulse) => { pulse.age += dt; });
+      conduction.pulses = conduction.pulses.filter((pulse) => pulse.age < 0.38);
+    }
+
+    function drawConduction() {
+      const conduction = state.modes.conduction;
+      const startX = 169;
+      const startY = 105;
+      const spacingX = 26;
+      const spacingY = 43;
+      context.fillStyle = "#081d2b";
+      context.fillRect(0, 0, canvas.width, canvas.height);
+
+      const heaterGlow = context.createLinearGradient(48, 0, 145, 0);
+      heaterGlow.addColorStop(0, "rgba(232,75,56,0.06)");
+      heaterGlow.addColorStop(1, `rgba(232,75,56,${0.25 + state.heaterPower * 0.4})`);
+      context.fillStyle = heaterGlow;
+      context.fillRect(48, 76, 97, 300);
+      drawArrow(92, 352, 92, 108, "#ff8a78", 4, 8);
+      context.fillStyle = "#ff8a78";
+      context.font = "800 13px 'Microsoft JhengHei'";
+      context.textAlign = "center";
+      context.fillText("加熱端", 92, 398);
+
+      for (let r = 0; r < 6; r += 1) {
+        for (let c = 0; c < 17; c += 1) {
+          const idx = r * 17 + c;
+          const temp = conduction.temperatures[idx];
+          const disp = conduction.displacements[idx];
+          const px = startX + c * spacingX + disp;
+          const py = startY + r * spacingY;
+
+          context.shadowColor = temperatureColour(temp, 0.7);
+          context.shadowBlur = 7;
+          context.fillStyle = temperatureColour(temp, 0.98);
+          context.beginPath();
+          context.arc(px, py, 11.8, 0, Math.PI * 2);
+          context.fill();
+          context.shadowBlur = 0;
+        }
+      }
+
+      conduction.pulses.forEach((pulse) => {
+        const leftIndex = pulse.row * 17 + pulse.column;
+        const px = startX + pulse.column * spacingX + conduction.displacements[leftIndex] + 12;
+        const py = startY + pulse.row * spacingY;
+        context.fillStyle = `rgba(255, 214, 74, ${1 - pulse.age / 0.38})`;
+        context.beginPath();
+        context.arc(px, py, 2.5 + pulse.age * 8, 0, Math.PI * 2);
+        context.fill();
+      });
+
+      context.fillStyle = "#c6dce5";
+      context.font = "13px 'Microsoft JhengHei'";
+      context.textAlign = "center";
+      context.fillText("粒子只在平衡位置附近振動；接近右方粒子時逐粒推撞並向右傳能", canvas.width / 2, 436);
+    }
+
+    function stepConvection(dt) {
+      const convection = state.modes.convection;
+      const res = HeatTransferModel.stepContinuousFluid(
+        convection.grid,
+        convection.particles,
+        state.heaterPower,
+        dt
+      );
+      if (res && res.grid) convection.grid = res.grid;
+      if (res && res.particles) convection.particles = res.particles;
+
+      // 記錄全池平均水溫歷史數據
+      let sumTemp = 0;
+      const grid = convection.grid;
+      const count = grid.nx * grid.ny;
+      for (let i = 0; i < count; i += 1) sumTemp += grid.temp[i];
+      const avgTemp = sumTemp / count;
+
+      const history = convection.history;
+      if (!history.length || (convection.elapsed - history[history.length - 1].time) >= 0.08) {
+        history.push({ time: convection.elapsed, temp: avgTemp });
+        if (history.length > 600) history.shift();
+      }
+    }
+
+    function drawConvection() {
+      const convection = state.modes.convection;
+      const grid = convection.grid;
+      const particles = convection.particles;
+      context.fillStyle = "#071724";
+      context.fillRect(0, 0, canvas.width, canvas.height);
+
+      const left = 90, top = 36, width = 570, height = 330;
+
+      // 1. 底層：連續流體熱場柔和渲染
+      const imgData = offscreenImage.data;
+      const totalPixels = grid.nx * grid.ny;
+      for (let i = 0; i < totalPixels; i += 1) {
+        const rgb = getRGBAtTemp(grid.temp[i]);
+        const pIdx = i * 4;
+        imgData[pIdx] = rgb[0];
+        imgData[pIdx + 1] = rgb[1];
+        imgData[pIdx + 2] = rgb[2];
+        imgData[pIdx + 3] = 140;
+      }
+      offscreenContext.putImageData(offscreenImage, 0, 0);
+
+      context.save();
+      context.imageSmoothingEnabled = true;
+      context.imageSmoothingQuality = "high";
+      context.drawImage(offscreenCanvas, left, top, width, height);
+      context.restore();
+
+      // 2. 頂層：渲染 200 顆清晰立體的流體示蹤水微團
+      if (particles && particles.length) {
+        particles.forEach((p) => {
+          const px = left + p.x * width;
+          const py = top + p.y * height;
+          const pAlpha = p.alpha ?? 1.0;
+          if (pAlpha <= 0.01) return;
+
+          const coreCol = temperatureColour(p.temperature, pAlpha * 0.95);
+
+          // 外層微弱光暈
+          context.fillStyle = temperatureColour(p.temperature, pAlpha * 0.35);
+          context.beginPath();
+          context.arc(px, py, 6.5, 0, Math.PI * 2);
+          context.fill();
+
+          // 實體微團水滴
+          context.fillStyle = coreCol;
+          context.beginPath();
+          context.arc(px, py, 4.6, 0, Math.PI * 2);
+          context.fill();
+
+          // 精緻白色輪廓與內部高光點
+          context.strokeStyle = `rgba(255, 255, 255, ${pAlpha * 0.85})`;
+          context.lineWidth = 1.2;
+          context.stroke();
+
+          context.fillStyle = `rgba(255, 255, 255, ${pAlpha * 0.7})`;
+          context.beginPath();
+          context.arc(px - 1.2, py - 1.2, 1.4, 0, Math.PI * 2);
+          context.fill();
+        });
+      }
+
+      // 3. 玻璃水槽外框與頂部水面光澤
+      context.strokeStyle = "#a9d0df";
+      context.lineWidth = 4;
+      context.beginPath();
+      context.moveTo(left, top);
+      context.lineTo(left, top + height);
+      context.lineTo(left + width, top + height);
+      context.lineTo(left + width, top);
+      context.stroke();
+
+      // 水面反光
+      context.fillStyle = "rgba(255, 255, 255, 0.35)";
+      context.fillRect(left + 2, top + 2, width - 4, 5);
+
+      // 4. 底部加熱器
+      const heaterGlow = context.createLinearGradient(0, top + height, 0, top + height + 26);
+      heaterGlow.addColorStop(0, `rgba(232,75,56,${0.6 + state.heaterPower * 0.4})`);
+      heaterGlow.addColorStop(1, "rgba(232,75,56,0)");
+      context.fillStyle = heaterGlow;
+      context.fillRect(left + width * 0.32, top + height + 4, width * 0.36, 22);
+
+      context.fillStyle = `rgba(232,75,56,${0.85 + state.heaterPower * 0.15})`;
+      context.fillRect(left + width * 0.35, top + height + 6, width * 0.3, 10);
+      context.fillStyle = "#ff6b57";
+      context.font = "800 13px 'Microsoft JhengHei'";
+      context.textAlign = "center";
+      context.fillText("🔥 底部加熱源", left + width * 0.5, top + height + 32);
+
+      // 5. 即時流向輔助向量箭頭
+      if (convection.revealed || state.running) {
+        const samplePoints = [
+          [0.44, 0.78], [0.44, 0.50], [0.44, 0.24],
+          [0.28, 0.15], [0.14, 0.38], [0.14, 0.68], [0.28, 0.85],
+          [0.56, 0.78], [0.56, 0.50], [0.56, 0.24],
+          [0.72, 0.15], [0.86, 0.38], [0.86, 0.68], [0.72, 0.85]
+        ];
+
+        samplePoints.forEach(([sx, sy]) => {
+          const vel = HeatTransferModel.sampleGridVelocity(grid, sx, sy);
+          const speed = Math.hypot(vel.vx, vel.vy);
+          if (speed > 0.005) {
+            const scale = Math.min(26, Math.max(12, speed * 220));
+            const normVx = vel.vx / speed * scale;
+            const normVy = vel.vy / speed * scale;
+            const px = left + sx * width;
+            const py = top + sy * height;
+            drawArrow(px, py, px + normVx, py + normVy, "rgba(255,255,255,0.85)", 2, 6);
+          }
+        });
+      }
+
+      context.fillStyle = "#94a3b8";
+      context.font = "12px 'Microsoft JhengHei'";
+      context.textAlign = "center";
+      context.fillText("示蹤水微團平滑流動：暖微團變紅升起、冷微團變藍下沉，整體水溫持續穩定攀升", canvas.width / 2, 442);
+    }
+
+    function average(values) { return values.length ? values.reduce((sum, v) => sum + v, 0) / values.length : 0; }
+
+    function conductionColumnTemperatures() {
+      const temperatures = state.modes.conduction.temperatures;
+      return Array.from({ length: 17 }, (_, column) => average(
+        Array.from({ length: 6 }, (_, row) => temperatures[row * 17 + column])
+      ));
+    }
+
+    function drawChart() {
+      chartContext.clearRect(0, 0, chart.width, chart.height);
+      chartContext.fillStyle = "#f8fbfc";
+      chartContext.fillRect(0, 0, chart.width, chart.height);
+
+      if (state.mode === "conduction") {
+        const left = 44, top = 18, width = 260, height = 150;
+        chartContext.strokeStyle = "#8ba3af";
+        chartContext.lineWidth = 1;
+        chartContext.beginPath();
+        chartContext.moveTo(left, top);
+        chartContext.lineTo(left, top + height);
+        chartContext.lineTo(left + width, top + height);
+        chartContext.stroke();
+
+        chartContext.font = "11px Consolas, monospace";
+        chartContext.fillStyle = "#607080";
+        chartContext.textAlign = "left";
+        const temperatures = conductionColumnTemperatures();
+        chartContext.fillText("100°C", 4, top + 6);
+        chartContext.fillText("20°C", 10, top + height + 3);
+        chartContext.fillText("熱端(左)", left, chart.height - 12);
+        chartContext.fillText("冷端(右)", left + width - 42, chart.height - 12);
+
+        chartContext.strokeStyle = "#e84b38";
+        chartContext.lineWidth = 3;
+        chartContext.beginPath();
+        temperatures.forEach((temperature, index) => {
+          const x = left + (index / (temperatures.length - 1)) * width;
+          const y = top + ((100 - temperature) / 80) * height;
+          if (index === 0) chartContext.moveTo(x, y);
+          else chartContext.lineTo(x, y);
+        });
+        chartContext.stroke();
+      } else {
+        drawConvectionGraph();
+      }
+    }
+
+    function drawConvectionGraph() {
+      const history = state.modes.convection.history;
+      const lastPoint = history[history.length - 1] || { time: 0, temp: 20 };
+      const graphKey = `${history.length}:${lastPoint.time.toFixed(2)}:${lastPoint.temp.toFixed(2)}`;
+      $("currentTemp").textContent = `${lastPoint.temp.toFixed(1)}°C`;
+      const change = lastPoint.temp - 20;
+      $("tempChange").textContent = `較開始 ${change >= 0 ? "+" : "−"}${Math.abs(change).toFixed(1)}°C`;
+      if (convectionGraph.dataset.key === graphKey) return;
+      convectionGraph.dataset.key = graphKey;
+
+      const left = 40, top = 8, right = 316, bottom = 142;
+      const width = right - left, height = bottom - top;
+      const minTemp = 20, maxTemp = 100;
+      const maxTime = 90;
+      const xAt = (time) => left + HeatTransferModel.clamp(time / maxTime, 0, 1) * width;
+      const yAt = (temp) => bottom - HeatTransferModel.clamp((temp - minTemp) / (maxTemp - minTemp), 0, 1) * height;
+      const points = history.map((point) => [xAt(point.time), yAt(point.temp)]);
+      const linePath = points.map(([x, y], index) => `${index ? "L" : "M"}${x.toFixed(1)} ${y.toFixed(1)}`).join(" ");
+      const areaPath = `M${points[0][0].toFixed(1)} ${bottom} ${points.map(([x, y]) => `L${x.toFixed(1)} ${y.toFixed(1)}`).join(" ")} L${points[points.length - 1][0].toFixed(1)} ${bottom} Z`;
+      const lastX = points[points.length - 1][0], lastY = points[points.length - 1][1];
+      const yGrid = [20, 40, 60, 80, 100].map((temp) => {
+        const y = yAt(temp);
+        return `<line class="graph-grid" x1="${left}" y1="${y}" x2="${right}" y2="${y}"/><text class="graph-label" x="34" y="${y + 3}" text-anchor="end">${temp}°</text>`;
+      }).join("");
+      const xGrid = [0, 30, 60, 90].map((time) => {
+        const x = xAt(time);
+        const label = time === 90 ? "1分30秒" : `${time}秒`;
+        return `<line class="graph-grid" x1="${x}" y1="${top}" x2="${x}" y2="${bottom}"/><text class="graph-label" x="${x}" y="157" text-anchor="${time === 90 ? "end" : "middle"}">${label}</text>`;
+      }).join("");
+
+      convectionGraph.setAttribute("aria-label", `整體液體平均溫度由 20.0°C 上升至 ${lastPoint.temp.toFixed(1)}°C，經過 ${lastPoint.time.toFixed(1)} 秒`);
+      convectionGraph.innerHTML = `
+        <title>整體液體平均溫度—時間關係圖</title>
+        <defs><linearGradient id="temperatureArea" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#ff6b57" stop-opacity=".28"/><stop offset="1" stop-color="#ff6b57" stop-opacity=".03"/></linearGradient></defs>
+        ${yGrid}${xGrid}
+        <line class="graph-axis" x1="${left}" y1="${top}" x2="${left}" y2="${bottom}"/><line class="graph-axis" x1="${left}" y1="${bottom}" x2="${right}" y2="${bottom}"/>
+        <text class="graph-axis-label" x="40" y="7">平均水溫 T (°C)</text><text class="graph-axis-label" x="178" y="174" text-anchor="middle">時間 t (s)</text>
+        <path class="temperature-area" d="${areaPath}"/><path class="temperature-line" d="${linePath}"/>
+        <circle class="start-point" cx="${points[0][0]}" cy="${points[0][1]}" r="3.5"/><line class="current-guide" x1="${lastX}" y1="${lastY}" x2="${lastX}" y2="${bottom}"/><circle class="temperature-point" cx="${lastX}" cy="${lastY}" r="5"/>
+      `;
+    }
+
+    function renderMode() {
+      const mode = modes[state.mode];
+      const modeState = currentModeState();
+      document.querySelectorAll(".mode-button").forEach((btn) => btn.setAttribute("aria-pressed", String(btn.dataset.mode === state.mode)));
+
+      $("modeTitle").textContent = mode.title;
+      $("modeSubtitle").textContent = mode.subtitle;
+      $("predictionLabel").textContent = mode.question;
+      $("prediction").replaceChildren(...mode.options.map(([value, text]) => Object.assign(document.createElement("option"), { value, textContent: text })));
+      $("prediction").value = modeState.prediction;
+      $("checkButton").disabled = !modeState.prediction || modeState.revealed;
+      $("runButton").textContent = state.running ? "暫停" : "開始";
+      $("feedback").textContent = modeState.revealed ? mode.feedback : "先選預測答案，才顯示物理證據。";
+      $("feedback").classList.remove("error");
+
+      const isConvection = state.mode === "convection";
+      $("gravityBadge").hidden = !isConvection;
+      chart.hidden = isConvection;
+      $("convectionChart").hidden = !isConvection;
+
+      if (isConvection) {
+        $("chartTitle").textContent = "整體液體平均溫度—時間關係圖 \(T-t\)";
+        $("chartNote").textContent = "底部持續供熱使整體水體累積蓄熱，熱量透過對流與擴散傳遍全體，水溫持續上升。";
+        $("concept").textContent = "底部熱水團受淨浮力上升，形成連續熱羽流並帶動兩側冷水下沉，使整體水體平穩升溫。";
+      } else {
+        $("chartTitle").textContent = "固體溫度—位置分佈曲線";
+        $("chartNote").textContent = "曲線由同一組粒子溫度繪製，會隨逐粒推撞由左向右改變。";
+        $("concept").textContent = "粒子只在平衡位置附近移動；左粒子接近右粒子時觸發推撞，振動和熱能沿左右逐步傳開。";
+      }
+
+      $("status").textContent = state.running
+        ? (isConvection ? "正在實時模擬連續流體熱羽流與示蹤水微團對流升溫過程。" : "正在實時模擬固體微觀晶格推撞振動。")
+        : (modeState.revealed ? "已暫停；點擊「開始」繼續觀察。" : "點擊「開始」或完成右上角預測觀察流動現象。");
+
+      if (window.renderMathInElement) {
+        window.renderMathInElement(document.body, {
+          delimiters: [
+            { left: "\\(", right: "\\)", display: false },
+            { left: "\\[", right: "\\]", display: true }
+          ]
+        });
+      }
+
+      drawChart();
+    }
+
+    function resetCurrentMode() {
+      state.running = false;
+      if (state.mode === "conduction") {
+        state.modes.conduction = { revealed: false, prediction: "", elapsed: 0, ...createConductionLattice() };
+      } else {
+        state.modes.convection = {
+          revealed: false,
+          prediction: "",
+          elapsed: 0,
+          grid: HeatTransferModel.createFluidGrid(36, 24),
+          particles: HeatTransferModel.createFluidParticles(200),
+          history: [{ time: 0, temp: 20 }]
+        };
+      }
+      renderMode();
+    }
+
+    function frame(time) {
+      try {
+        const rawDt = state.lastTime ? Math.min(0.04, (time - state.lastTime) / 1000) : 0;
+        state.lastTime = time;
+        const dt = rawDt * state.speed * (state.slow ? 0.25 : 1);
+
+        if (state.running) {
+          currentModeState().elapsed += dt;
+          if (state.mode === "conduction") stepConduction(dt);
+          else stepConvection(dt);
+        }
+
+        if (state.mode === "conduction") drawConduction();
+        else drawConvection();
+
+        drawChart();
+      } catch (err) {
+        console.error("Frame loop error:", err);
+      }
+      window.requestAnimationFrame(frame);
+    }
+
+    // 事件監聽
+    document.querySelectorAll(".mode-button").forEach((btn) => btn.addEventListener("click", () => {
+      state.running = false;
+      state.mode = btn.dataset.mode;
+      renderMode();
+    }));
+
+    $("prediction").addEventListener("change", (e) => {
+      currentModeState().prediction = e.target.value;
+      $("checkButton").disabled = !e.target.value;
+      $("feedback").textContent = "點擊「檢查」確認預測並解鎖物理證據。";
+      $("feedback").classList.remove("error");
+    });
+
+    $("checkButton").addEventListener("click", () => {
+      const mode = modes[state.mode];
+      const modeState = currentModeState();
+      if (modeState.prediction !== mode.answer) {
+        $("feedback").textContent = mode.hint || "預測未符合模型，再觀察條件。";
+        $("feedback").classList.add("error");
+        return;
+      }
+      modeState.revealed = true;
+      state.running = true;
+      renderMode();
+    });
+
+    $("runButton").addEventListener("click", () => {
+      state.running = !state.running;
+      renderMode();
+    });
+
+    $("heater").addEventListener("input", (e) => { state.heaterPower = Number(e.target.value) / 100; $("heaterOutput").textContent = `${e.target.value}%`; });
+    $("speed").addEventListener("input", (e) => { state.speed = Number(e.target.value) / 100; $("speedOutput").textContent = `${state.speed.toFixed(2)}×`; });
+    $("slowButton").addEventListener("click", () => { state.slow = !state.slow; $("slowButton").setAttribute("aria-pressed", String(state.slow)); });
+    $("resetButton").addEventListener("click", resetCurrentMode);
+
+    document.addEventListener("DOMContentLoaded", () => {
+      renderMode();
+      window.requestAnimationFrame(frame);
+    });
+  </script>
+</body>
+</html>

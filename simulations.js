@@ -26,9 +26,17 @@
       title: "粒子能量實驗台",
       description: "比較質量、溫度與物態如何改變粒子的總動能、總勢能及物體內能。",
       topic: "熱與氣體",
-      href: "./internal-energy-particle-model/index.html",
-      image: "./internal-energy-particle-model/preview.png",
+      href: "./HEAT/internal-energy-particle-model/index.html",
+      image: "./HEAT/internal-energy-particle-model/preview.png",
       tags: ["內能", "粒子模型", "動能", "勢能", "冰", "水"]
+    },
+    {
+      title: "熱如何移動：傳導與對流",
+      description: "觀察固體粒子逐粒推撞傳能，以及密度差配合重力形成的流體循環。",
+      topic: "熱與氣體",
+      href: "./HEAT/heat-transfer-conduction-convection/index.html",
+      image: "./HEAT/heat-transfer-conduction-convection/preview.png",
+      tags: ["熱傳", "傳導", "對流", "粒子推撞", "密度", "浮力"]
     }
   ];
 
