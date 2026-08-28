@@ -1,0 +1,108 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="按課題瀏覽 HKDSE 物理互動模擬器。">
+  <title>物理模擬器目錄</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;600;700&amp;family=Noto+Serif+TC:wght@700;900&amp;display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="./styles.css">
+  <script defer src="./simulations.js"></script>
+</head>
+<body>
+  <a class="skip-link" href="#catalogue">跳至模擬器目錄</a>
+
+  <header class="site-header">
+    <a class="brand" href="./" aria-label="物理模擬器目錄首頁">
+      <span class="brand-mark" aria-hidden="true">Φ</span>
+      <span>物理模擬器目錄</span>
+    </a>
+    <span class="header-note">HKDSE Physics · Interactive Lab</span>
+  </header>
+
+  <main>
+    <div class="background-stage">
+      <section class="hero" aria-labelledby="page-title">
+        <div class="hero-copy">
+          <p class="eyebrow">互動物理實驗室</p>
+          <h1 id="page-title">物理現象，<br><em>由一個變量開始。</em></h1>
+          <p class="hero-intro">按課題挑選模擬器，改變條件、觀察證據，再回到物理概念。</p>
+        </div>
+
+        <svg class="physics-totem" viewBox="0 0 320 240" aria-hidden="true" focusable="false">
+          <defs>
+            <marker id="physics-totem-arrow" markerWidth="8" markerHeight="8" refX="7" refY="4" orient="auto">
+              <path class="physics-totem__arrow-head" d="M0 0 8 4 0 8Z"></path>
+            </marker>
+          </defs>
+          <path class="physics-totem__guide" d="M34 190H294M252 52V190"></path>
+          <path class="physics-totem__wave" d="M34 190C49 158 64 158 79 190S109 222 124 190 154 158 169 190 199 222 214 190 244 158 259 190 279 214 294 190"></path>
+          <ellipse class="physics-totem__orbit" cx="156" cy="91" rx="108" ry="53" transform="rotate(-12 156 91)"></ellipse>
+          <circle class="physics-totem__origin" cx="156" cy="91" r="5"></circle>
+          <path class="physics-totem__vector" d="M252 52 293 88" marker-end="url(#physics-totem-arrow)"></path>
+          <circle class="physics-totem__point" cx="252" cy="52" r="8"></circle>
+        </svg>
+      </section>
+
+      <section class="latest-section" aria-labelledby="latest-title">
+        <div class="latest-heading">
+          <p class="eyebrow">最新加入</p>
+          <h2 id="latest-title">快速預覽</h2>
+          <p>從最近更新的模擬器開始探索。</p>
+        </div>
+        <div class="latest-card" id="latest-simulation"></div>
+      </section>
+    </div>
+
+    <section class="catalogue" id="catalogue" aria-labelledby="catalogue-title">
+      <div class="catalogue-head">
+        <div>
+          <p class="eyebrow">模擬器索引</p>
+          <h2 id="catalogue-title">選擇課題</h2>
+        </div>
+
+        <label class="search-field">
+          <span class="search-icon" aria-hidden="true"></span>
+          <span class="visually-hidden">搜尋模擬器</span>
+          <input id="search" type="search" placeholder="搜尋概念、課題或關鍵詞…" autocomplete="off">
+        </label>
+      </div>
+
+      <div class="catalogue-layout">
+        <aside class="topic-sidebar" aria-labelledby="topic-nav-title">
+          <p class="sidebar-label" id="topic-nav-title">快速導航</p>
+          <div class="filters" id="filters" aria-label="按物理課題篩選"></div>
+        </aside>
+
+        <div class="catalogue-results">
+          <p class="result-status" id="result-status" aria-live="polite"></p>
+          <div id="simulation-groups"></div>
+
+          <div class="empty-state" id="empty-state" hidden>
+            <span aria-hidden="true">∅</span>
+            <h3>這個課題暫未有相符模擬器</h3>
+            <p>選擇其他課題，或清除搜尋。</p>
+            <button type="button" id="clear-search">清除搜尋及篩選</button>
+          </div>
+        </div>
+      </div>
+
+      <noscript>
+        <p class="noscript-note">請啟用 JavaScript 以顯示及篩選模擬器目錄。</p>
+      </noscript>
+
+      <footer>
+        <p>為課堂觀察與討論而設 · 所有物理計算均為確定性模型</p>
+        <div class="footer-meta">
+          <p>© 2026 物理模擬器目錄 · 保留所有權利</p>
+          <a href="https://github.com/LS404-123/Physics-simulation" target="_blank" rel="noopener noreferrer">
+            GitHub 原始碼 <span aria-hidden="true">↗</span>
+          </a>
+        </div>
+      </footer>
+    </section>
+  </main>
+</body>
+</html>

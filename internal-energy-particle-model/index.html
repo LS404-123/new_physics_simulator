@@ -1,0 +1,502 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=1140, initial-scale=1">
+  <title>粒子能量實驗台｜內能</title>
+  <link rel="stylesheet" href="../HEAT/thermometer-calibration-slope/katex/katex.min.css">
+  <script defer src="../HEAT/thermometer-calibration-slope/katex/katex.min.js"></script>
+  <script defer src="../HEAT/thermometer-calibration-slope/katex/contrib/auto-render.min.js"></script>
+  <style>
+    :root {
+      --ink: #eaf7ff;
+      --muted: #91aabd;
+      --navy: #081a2a;
+      --panel: #102b41;
+      --panel-2: #163850;
+      --line: #31536a;
+      --ice: #63dbe9;
+      --cold: #4aa8ff;
+      --hot: #ff5349;
+      --ke: #53d3ff;
+      --pe: #b99cff;
+      --u: #ffd166;
+      --good: #90e6ad;
+    }
+
+    * { box-sizing: border-box; }
+    [hidden] { display: none !important; }
+    html, body {
+      width: 100%;
+      min-width: 1140px;
+      min-height: 768px;
+      margin: 0;
+      overflow: hidden;
+      color: var(--ink);
+      background: #06131f;
+      font-family: "Microsoft JhengHei", "Noto Sans TC", sans-serif;
+    }
+    body { display: grid; place-items: center; }
+    button, input, select { font: inherit; }
+    button, select, input[type="range"] { cursor: pointer; }
+    button:focus-visible, select:focus-visible, input:focus-visible, a:focus-visible {
+      outline: 3px solid var(--u);
+      outline-offset: 3px;
+    }
+
+    .simulator {
+      width: 1140px;
+      height: 768px;
+      overflow: hidden;
+      background-color: var(--navy);
+      background-image:
+        linear-gradient(rgba(83, 211, 255, .04) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(83, 211, 255, .04) 1px, transparent 1px);
+      background-size: 24px 24px;
+      box-shadow: 0 18px 50px rgba(0, 0, 0, .35);
+    }
+
+    .topbar {
+      height: 64px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0 24px;
+      border-bottom: 1px solid var(--line);
+      background: rgba(5, 20, 32, .94);
+    }
+    .title-wrap { display: flex; align-items: baseline; gap: 14px; }
+    h1 { margin: 0; font-size: 27px; letter-spacing: .06em; }
+    .formula { color: var(--u); font-size: 19px; }
+    .top-actions { display: flex; align-items: center; gap: 12px; }
+    .stage-badge {
+      padding: 7px 13px;
+      border: 1px solid var(--u);
+      border-radius: 999px;
+      color: var(--u);
+      font-weight: 700;
+    }
+    .home-link { color: var(--muted); text-decoration: none; font-size: 14px; }
+
+    .lesson-strip {
+      height: 86px;
+      display: grid;
+      grid-template-columns: 230px 1fr 1fr 148px;
+      gap: 12px;
+      align-items: center;
+      padding: 10px 20px;
+      border-bottom: 1px solid var(--line);
+      background: #0d2538;
+    }
+    .lesson-copy p { margin: 2px 0 0; color: var(--muted); font-size: 13px; line-height: 1.35; }
+    .eyebrow { color: var(--u); font: 700 12px Consolas, monospace; letter-spacing: .14em; }
+    .question {
+      display: grid;
+      gap: 5px;
+      margin: -5px -8px;
+      padding: 5px 8px;
+      border: 1px solid rgba(255, 209, 102, .45);
+      border-radius: 9px;
+      background: rgba(255, 209, 102, .055);
+    }
+    .question label { font-size: 13px; font-weight: 700; }
+    select {
+      min-height: 44px;
+      width: 100%;
+      padding: 0 10px;
+      border: 1px solid var(--line);
+      border-radius: 7px;
+      color: var(--ink);
+      background: var(--panel);
+    }
+    .reveal-button, .reset-button {
+      min-height: 46px;
+      border-radius: 8px;
+      font-weight: 800;
+    }
+    .reveal-button { border: 0; color: #082032; background: var(--u); }
+    .reveal-button:disabled { cursor: not-allowed; opacity: .42; }
+    .reveal-button.is-wrong { color: #fff; background: var(--hot); }
+    select[aria-invalid="true"] { border-color: var(--hot); box-shadow: 0 0 0 2px color-mix(in srgb, var(--hot) 35%, transparent); }
+    .feedback {
+      grid-column: 2 / 5;
+      margin: 0;
+      color: var(--good);
+      font-size: 14px;
+      font-weight: 700;
+    }
+
+    .workspace {
+      height: 562px;
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 14px;
+      padding: 12px 18px;
+    }
+    .object-panel {
+      min-width: 0;
+      display: grid;
+      grid-template-rows: 40px 210px 128px 104px;
+      gap: 8px;
+      padding: 10px 12px;
+      border: 1px solid var(--line);
+      border-radius: 13px;
+      background: rgba(16, 43, 65, .96);
+      box-shadow: inset 0 1px 0 rgba(255,255,255,.05);
+    }
+    .object-heading { display: flex; align-items: center; }
+    .object-name { display: flex; align-items: center; gap: 9px; font-size: 19px; font-weight: 800; }
+    .object-letter {
+      display: grid;
+      width: 31px;
+      height: 31px;
+      place-items: center;
+      border-radius: 50%;
+      color: #082032;
+      background: var(--u);
+      font: 800 17px Consolas, monospace;
+    }
+    .scene {
+      position: relative;
+      display: grid;
+      grid-template-columns: 218px 1fr;
+      align-items: center;
+      gap: 18px;
+      padding: 8px 22px;
+      border-radius: 9px;
+      background: #0a2133;
+      overflow: hidden;
+    }
+    .beaker {
+      position: relative;
+      width: 182px;
+      height: 176px;
+      margin: auto;
+      border: 3px solid #8eb2c5;
+      border-top: 0;
+      border-radius: 0 0 18px 18px;
+      overflow: hidden;
+      background: rgba(255,255,255,.035);
+    }
+    .beaker::before {
+      content: "";
+      position: absolute;
+      z-index: 3;
+      top: 0;
+      left: -5px;
+      width: calc(100% + 10px);
+      height: 3px;
+      background: #8eb2c5;
+    }
+    .matter {
+      position: absolute;
+      inset-inline: 0;
+      bottom: 0;
+      min-height: 36%;
+      background: color-mix(in srgb, var(--matter-color) 30%, transparent);
+      transition: height .18s ease, background .18s ease;
+    }
+    .particle {
+      position: absolute;
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: var(--matter-color);
+      box-shadow: 0 0 8px color-mix(in srgb, var(--matter-color) 70%, transparent);
+      transform: translate(-50%, -50%);
+    }
+    .object-panel[data-phase="ice"] .particle {
+      border-radius: 2px;
+    }
+    .scene-note { display: grid; align-content: center; gap: 14px; }
+    .phase-word { font-size: 24px; font-weight: 900; letter-spacing: .08em; }
+    .scene-state { display: grid; gap: 8px; color: var(--muted); font-size: 14px; }
+    .scene-state span { display: flex; justify-content: space-between; gap: 18px; }
+    .scene-state strong { color: var(--matter-color); font: 800 17px Consolas, monospace; }
+
+    .energy-card { position: relative; display: grid; gap: 7px; padding: 9px 12px; border-radius: 9px; background: #0a2133; }
+    .object-panel[data-revealed="false"] .energy-row { visibility: hidden; }
+    .object-panel[data-revealed="false"] .energy-card::after {
+      content: "完成預測後顯示能量證據";
+      position: absolute;
+      inset: 0;
+      display: grid;
+      place-items: center;
+      color: var(--muted);
+      font-size: 14px;
+      font-weight: 700;
+      letter-spacing: .05em;
+    }
+    .energy-row { display: grid; grid-template-columns: 72px 1fr; align-items: center; gap: 9px; }
+    .energy-label { font: 800 13px Consolas, monospace; }
+    .energy-track {
+      height: 20px;
+      display: flex;
+      overflow: hidden;
+      border: 1px solid #355b72;
+      border-radius: 4px;
+      background: #061824;
+    }
+    .energy-fill { height: 100%; transition: width .18s ease; }
+    .ke-fill { background: var(--ke); }
+    .pe-fill { background: var(--pe); }
+    .u-ke { background: var(--ke); }
+    .u-pe { background: var(--pe); }
+    .u-row .energy-track { border-color: var(--u); box-shadow: 0 0 0 1px rgba(255,209,102,.12); }
+
+    .controls { display: grid; grid-template-columns: 1fr 1fr; grid-template-rows: 44px 54px; gap: 6px 10px; }
+    .phase-switch { grid-column: 1 / -1; display: grid; grid-template-columns: 1fr 1fr; gap: 6px; }
+    .phase-button {
+      min-height: 44px;
+      border: 1px solid var(--line);
+      border-radius: 7px;
+      color: var(--muted);
+      background: #0a2133;
+      font-weight: 800;
+    }
+    .phase-button[aria-pressed="true"] { color: #071d2c; background: var(--matter-color); border-color: var(--matter-color); }
+    .control { display: grid; grid-template-columns: 42px minmax(0, 1fr) 58px; align-items: center; gap: 6px; }
+    .control label { font-size: 13px; font-weight: 700; }
+    .control output { text-align: right; color: var(--u); font: 800 15px Consolas, monospace; }
+    input[type="range"] { width: 100%; min-height: 44px; accent-color: var(--u); }
+    input:disabled, button:disabled { cursor: not-allowed; opacity: .38; }
+
+    .footer {
+      height: 56px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 16px;
+      padding: 0 20px;
+      border-top: 1px solid var(--line);
+      background: #071723;
+    }
+    .concept { margin: 0; font-size: 14px; font-weight: 700; }
+    .legend { display: flex; gap: 13px; color: var(--muted); font-size: 12px; }
+    .legend span::before { content: ""; display: inline-block; width: 10px; height: 10px; margin-right: 5px; border-radius: 2px; }
+    .legend .ke::before { background: var(--ke); }
+    .legend .pe::before { background: var(--pe); }
+    .reset-button { min-width: 90px; border: 1px solid #7090a4; color: var(--ink); background: transparent; }
+
+    @media (prefers-reduced-motion: reduce) {
+      *, *::before, *::after { scroll-behavior: auto !important; transition-duration: .001ms !important; }
+    }
+  </style>
+</head>
+<body>
+  <main class="simulator">
+    <header class="topbar">
+      <div class="title-wrap">
+        <h1>粒子能量實驗台</h1>
+        <span class="formula">\(U=KE+PE\)</span>
+      </div>
+      <div class="top-actions">
+        <span class="stage-badge" id="stageBadge">先作預測</span>
+        <a class="home-link" href="../">返回模擬器目錄</a>
+      </div>
+    </header>
+
+    <section class="lesson-strip" aria-label="預測活動">
+      <div class="lesson-copy">
+        <span class="eyebrow">固定初始狀態</span>
+        <p>A：100 g、25°C 水<br>B：300 g、25°C 水</p>
+      </div>
+      <div class="question prediction-control">
+        <label for="internalPrediction">哪杯水的內能較大？</label>
+        <select id="internalPrediction">
+          <option value="">請先預測</option><option value="A">A 杯</option><option value="B">B 杯</option><option value="same">兩杯相同</option>
+        </select>
+      </div>
+      <div class="question prediction-control">
+        <label for="kineticPrediction">哪杯水所有粒子的總 KE 較大？</label>
+        <select id="kineticPrediction">
+          <option value="">請先預測</option><option value="A">A 杯</option><option value="B">B 杯</option><option value="same">兩杯相同</option>
+        </select>
+      </div>
+      <button class="reveal-button prediction-control" id="revealButton" type="button" disabled>檢查答案</button>
+      <p class="feedback" id="feedback" hidden></p>
+    </section>
+
+    <section class="workspace" aria-label="兩個物體的粒子與能量比較">
+      <article class="object-panel" id="panelA" data-object="A" data-phase="water"></article>
+      <article class="object-panel" id="panelB" data-object="B" data-phase="water"></article>
+    </section>
+
+    <footer class="footer">
+      <p class="concept" id="conceptText">先預測，再用共同尺度的能量條驗證。</p>
+      <div class="legend" aria-label="能量顏色圖例"><span class="ke">總動能 KE</span><span class="pe">總勢能 PE</span></div>
+      <button class="reset-button" id="resetButton" type="button">重設</button>
+    </footer>
+  </main>
+
+  <script src="model.js"></script>
+  <script>
+    "use strict";
+
+    const $ = (id) => document.getElementById(id);
+    const initialObjects = {
+      A: { mass: 100, temperature: 25, phase: "water" },
+      B: { mass: 300, temperature: 25, phase: "water" }
+    };
+    const state = { revealed: false, objects: structuredClone(initialObjects) };
+    const maximumEnergy = InternalEnergyModel.energyFor({ mass: 500, temperature: 100, phase: "water" }).internal;
+
+    function panelMarkup(letter) {
+      return `
+        <div class="object-heading">
+          <div class="object-name"><span class="object-letter">${letter}</span><span>物體 ${letter}</span></div>
+        </div>
+        <div class="scene">
+          <div class="beaker" aria-hidden="true"><div class="matter" id="matter${letter}"><div id="particles${letter}"></div></div></div>
+          <div class="scene-note">
+            <span class="phase-word" id="phaseWord${letter}"></span>
+            <div class="scene-state"><span>質量 <strong id="sceneMass${letter}"></strong></span><span>溫度 <strong id="sceneTemperature${letter}"></strong></span></div>
+          </div>
+        </div>
+        <div class="energy-card" aria-label="物體 ${letter} 的能量條">
+          <div class="energy-row"><span class="energy-label">總 KE</span><div class="energy-track"><span class="energy-fill ke-fill" id="ke${letter}"></span></div></div>
+          <div class="energy-row"><span class="energy-label">總 PE</span><div class="energy-track"><span class="energy-fill pe-fill" id="pe${letter}"></span></div></div>
+          <div class="energy-row u-row"><span class="energy-label">內能 U</span><div class="energy-track"><span class="energy-fill u-ke" id="uKe${letter}"></span><span class="energy-fill u-pe" id="uPe${letter}"></span></div></div>
+        </div>
+        <div class="controls" aria-label="物體 ${letter} 控制">
+          <div class="phase-switch">
+            <button class="phase-button simulator-control" data-letter="${letter}" data-phase="ice" type="button">冰</button>
+            <button class="phase-button simulator-control" data-letter="${letter}" data-phase="water" type="button">水</button>
+          </div>
+          <div class="control"><label for="mass${letter}">質量</label><input class="simulator-control" id="mass${letter}" data-letter="${letter}" data-key="mass" type="range" min="100" max="500" step="10"><output id="massOut${letter}"></output></div>
+          <div class="control"><label for="temperature${letter}">溫度</label><input class="simulator-control" id="temperature${letter}" data-letter="${letter}" data-key="temperature" type="range" step="1"><output id="temperatureOut${letter}"></output></div>
+        </div>`;
+    }
+
+    $("panelA").innerHTML = panelMarkup("A");
+    $("panelB").innerHTML = panelMarkup("B");
+    const simulatorControls = [...document.querySelectorAll(".simulator-control")];
+
+    function renderParticles(letter, object) {
+      const count = Math.round(10 + ((object.mass - 100) / 400) * 22);
+      const particles = [];
+      for (let index = 0; index < count; index += 1) {
+        const column = index % 8;
+        const row = Math.floor(index / 8);
+        const left = object.phase === "ice" ? 10 + column * 11.4 : 8 + ((index * 37) % 84);
+        const top = object.phase === "ice" ? 18 + row * 19 : 14 + ((index * 53) % 74);
+        particles.push(`<span class="particle" style="left:${left}%;top:${top}%"></span>`);
+      }
+      $("particles" + letter).innerHTML = particles.join("");
+      $("matter" + letter).style.height = `${38 + ((object.mass - 100) / 400) * 50}%`;
+    }
+
+    function renderObject(letter) {
+      const energy = InternalEnergyModel.energyFor(state.objects[letter]);
+      state.objects[letter] = { mass: energy.mass, temperature: energy.temperature, phase: energy.phase };
+      const phase = InternalEnergyModel.PHASES[energy.phase];
+      const panel = $("panel" + letter);
+      panel.dataset.phase = energy.phase;
+      panel.dataset.revealed = String(state.revealed);
+      const hotShare = energy.phase === "ice" ? 0 : energy.temperature;
+      panel.style.setProperty("--matter-color", energy.phase === "ice"
+        ? "var(--ice)"
+        : `color-mix(in srgb, var(--cold) ${100 - hotShare}%, var(--hot) ${hotShare}%)`);
+      $("phaseWord" + letter).textContent = energy.phase === "ice" ? "冰" : "水";
+      $("sceneMass" + letter).textContent = `${energy.mass} g`;
+      $("sceneTemperature" + letter).textContent = `${energy.temperature} °C`;
+      renderParticles(letter, energy);
+
+      const width = (value) => `${(value / maximumEnergy) * 100}%`;
+      $("ke" + letter).style.width = width(energy.kinetic);
+      $("pe" + letter).style.width = width(energy.potential);
+      $("uKe" + letter).style.width = width(energy.kinetic);
+      $("uPe" + letter).style.width = width(energy.potential);
+
+      $("mass" + letter).value = energy.mass;
+      $("massOut" + letter).textContent = `${energy.mass} g`;
+      const temperature = $("temperature" + letter);
+      temperature.min = phase.minTemperature;
+      temperature.max = phase.maxTemperature;
+      temperature.value = energy.temperature;
+      $("temperatureOut" + letter).textContent = `${energy.temperature} °C`;
+      panel.querySelectorAll(".phase-button").forEach((button) => {
+        button.setAttribute("aria-pressed", String(button.dataset.phase === energy.phase));
+      });
+    }
+
+    function render() {
+      renderObject("A");
+      renderObject("B");
+      simulatorControls.forEach((control) => { control.disabled = !state.revealed; });
+      $("stageBadge").textContent = state.revealed ? "自由模擬" : "先作預測";
+      $("conceptText").textContent = state.revealed
+        ? "比較時先固定兩個條件，只改變質量、溫度或物態其中一項。"
+        : "先預測，再用共同尺度的能量條驗證。";
+    }
+
+    function updateRevealAvailability() {
+      const answers = [$("internalPrediction"), $("kineticPrediction")];
+      answers.forEach((answer) => answer.removeAttribute("aria-invalid"));
+      $("revealButton").classList.remove("is-wrong");
+      $("revealButton").textContent = "檢查答案";
+      $("revealButton").disabled = answers.some((answer) => !answer.value);
+    }
+
+    function revealEvidence() {
+      const internalAnswer = $("internalPrediction").value;
+      const kineticAnswer = $("kineticPrediction").value;
+      if (!InternalEnergyModel.predictionsAreCorrect(internalAnswer, kineticAnswer)) {
+        $("internalPrediction").setAttribute("aria-invalid", String(internalAnswer !== "B"));
+        $("kineticPrediction").setAttribute("aria-invalid", String(kineticAnswer !== "B"));
+        $("revealButton").classList.add("is-wrong");
+        $("revealButton").textContent = "未正確，再試一次";
+        $("revealButton").disabled = true;
+        window.setTimeout(() => {
+          $("internalPrediction").value = "";
+          $("kineticPrediction").value = "";
+          updateRevealAvailability();
+          $("internalPrediction").focus();
+        }, 2000);
+        return;
+      }
+      state.revealed = true;
+      $("feedback").textContent = "預測正確。兩杯同溫，所以粒子平均 KE 相同；B 杯粒子較多，總 KE 及內能較大。";
+      $("feedback").hidden = false;
+      document.querySelectorAll(".prediction-control").forEach((element) => { element.hidden = true; });
+      render();
+    }
+
+    function reset() {
+      state.revealed = false;
+      state.objects = structuredClone(initialObjects);
+      $("internalPrediction").value = "";
+      $("kineticPrediction").value = "";
+      $("feedback").hidden = true;
+      document.querySelectorAll(".prediction-control").forEach((element) => { element.hidden = false; });
+      updateRevealAvailability();
+      render();
+    }
+
+    document.querySelectorAll("select").forEach((select) => select.addEventListener("change", updateRevealAvailability));
+    $("revealButton").addEventListener("click", revealEvidence);
+    $("resetButton").addEventListener("click", reset);
+    document.querySelectorAll("input[type=range]").forEach((input) => {
+      input.addEventListener("input", (event) => {
+        const { letter, key } = event.target.dataset;
+        state.objects[letter][key] = Number(event.target.value);
+        render();
+      });
+    });
+    document.querySelectorAll(".phase-button").forEach((button) => {
+      button.addEventListener("click", () => {
+        const { letter, phase } = button.dataset;
+        state.objects[letter] = InternalEnergyModel.normalizeObject({ ...state.objects[letter], phase });
+        render();
+      });
+    });
+
+    document.addEventListener("DOMContentLoaded", () => {
+      if (window.renderMathInElement) {
+        renderMathInElement(document.body, { delimiters: [{ left: "\\(", right: "\\)", display: false }], throwOnError: false });
+      }
+      render();
+    });
+  </script>
+</body>
+</html>

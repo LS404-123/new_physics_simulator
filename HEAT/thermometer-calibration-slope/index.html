@@ -1,0 +1,572 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=1140, initial-scale=1">
+  <title>溫度計校準：看見斜率</title>
+  <link rel="stylesheet" href="katex/katex.min.css">
+  <script defer src="katex/katex.min.js"></script>
+  <script defer src="katex/contrib/auto-render.min.js"></script>
+  <style>
+    :root {
+      --ink: #13293d;
+      --muted: #526779;
+      --paper: #f8fcfd;
+      --paper-blue: #eaf4f8;
+      --grid: #c9dfe8;
+      --mercury: #e24a3b;
+      --evidence: #f4b942;
+      --teal: #168c8c;
+      --white: #fff;
+    }
+
+    * { box-sizing: border-box; }
+    [hidden] { display: none !important; }
+
+    html, body {
+      width: 100%;
+      min-width: 1140px;
+      min-height: 768px;
+      margin: 0;
+      background: #dbe8ed;
+      color: var(--ink);
+      font-family: "Microsoft JhengHei", "Noto Sans TC", sans-serif;
+      overflow: auto;
+    }
+
+    body {
+      min-height: 100vh;
+      display: grid;
+      place-items: center;
+    }
+
+    button, input { font: inherit; }
+
+    .simulator {
+      width: 1140px;
+      min-width: 1140px;
+      max-width: 1140px;
+      height: 768px;
+      min-height: 768px;
+      max-height: 768px;
+      overflow: hidden;
+      background: var(--paper);
+      box-shadow: 0 16px 44px rgba(19, 41, 61, .18);
+    }
+
+    header {
+      height: 72px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0 28px;
+      color: var(--white);
+      background: var(--ink);
+    }
+
+    h1 {
+      margin: 0;
+      font-family: "PMingLiU", "Noto Serif TC", serif;
+      font-size: 30px;
+      letter-spacing: .06em;
+      font-weight: 700;
+    }
+
+    .stage-badge {
+      min-width: 126px;
+      padding: 8px 14px;
+      border: 1px solid rgba(255,255,255,.5);
+      border-radius: 999px;
+      font-size: 15px;
+      text-align: center;
+    }
+
+    .instruction {
+      height: 56px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0 28px;
+      border-bottom: 2px solid var(--ink);
+      background: #fff7df;
+    }
+
+    #instructionText {
+      margin: 0;
+      font-size: 17px;
+      font-weight: 700;
+    }
+
+    .primary, .reset {
+      min-height: 46px;
+      border-radius: 8px;
+      cursor: pointer;
+      font-weight: 700;
+    }
+
+    .primary {
+      min-width: 164px;
+      padding: 0 18px;
+      border: 0;
+      color: var(--white);
+      background: var(--teal);
+      box-shadow: 0 4px 0 #0d6262;
+    }
+
+    .primary:active { transform: translateY(2px); box-shadow: 0 2px 0 #0d6262; }
+
+    .workspace {
+      position: relative;
+      width: 1140px;
+      height: 430px;
+      padding: 10px 20px 4px;
+      background-color: var(--paper-blue);
+      background-image:
+        linear-gradient(rgba(99,154,178,.14) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(99,154,178,.14) 1px, transparent 1px);
+      background-size: 20px 20px;
+    }
+
+    #scene { display: block; width: 1100px; height: 416px; }
+
+    .axis { stroke: var(--ink); stroke-width: 2.4; }
+    .grid-line { stroke: var(--grid); stroke-width: 1; }
+    .tick-text { fill: var(--muted); font-family: Consolas, monospace; font-size: 13px; }
+    .glass-bg { fill: rgba(255,255,255,.85); }
+    .glass { fill: none; stroke: var(--ink); stroke-width: 3.5; }
+    .mercury { fill: var(--mercury); }
+    .calibration-line { stroke: var(--teal); stroke-width: 5; stroke-linecap: round; }
+    .guide { stroke: var(--mercury); stroke-width: 2.5; stroke-dasharray: 9 7; }
+    .triangle { fill: rgba(244,185,66,.18); stroke: #bb7b00; stroke-width: 3; stroke-dasharray: 9 6; }
+    .fixed-point { fill: var(--white); stroke: var(--teal); stroke-width: 2.5; }
+    .current-point { fill: var(--mercury); stroke: var(--white); stroke-width: 2.5; }
+    .svg-value { fill: var(--ink); font-family: Consolas, monospace; font-size: 14px; }
+    .coordinate-box { fill: rgba(255,255,255,.94); stroke: #9dbdca; stroke-width: 1.2; }
+    .svg-math { color: var(--ink); font-size: 15px; font-weight: 700; text-align: center; background: rgba(255,255,255,0.92); border-radius: 4px; padding: 1px 4px; }
+
+    .panel-label {
+      position: absolute;
+      top: 18px;
+      padding: 5px 10px;
+      border-left: 4px solid var(--teal);
+      background: rgba(255,255,255,.88);
+      font-size: 15px;
+      font-weight: 700;
+    }
+
+    .thermo-label { left: 240px; }
+    .graph-label { left: 465px; }
+
+    .math-overlay {
+      position: absolute;
+      z-index: 2;
+      pointer-events: none;
+      font-size: 15px;
+      font-weight: 700;
+      padding: 1px 6px;
+      background: rgba(255, 255, 255, 0.85);
+      border-radius: 4px;
+    }
+
+    .x-axis-label { left: 857px; bottom: 8px; }
+    .y-axis-label { left: 573px; top: 40px; }
+
+    .slope-card {
+      position: absolute;
+      top: 54px;
+      left: 20px;
+      width: 280px;
+      min-height: 94px;
+      padding: 12px 16px;
+      border: 2px solid #bb7b00;
+      border-radius: 10px;
+      background: rgba(255,250,234,.96);
+      box-shadow: 5px 5px 0 rgba(187,123,0,.16);
+    }
+
+    .slope-card .equation { min-height: 60px; font-size: 18px; }
+    .meaning { margin-top: 7px; font-size: 15px; font-weight: 700; }
+
+    .controls {
+      height: 160px;
+      display: grid;
+      grid-template-columns: 1fr 1fr 1fr 104px;
+      gap: 16px;
+      align-items: center;
+      padding: 12px 24px;
+      border-top: 2px solid var(--ink);
+      background: var(--white);
+    }
+
+    .control {
+      height: 124px;
+      padding: 12px 14px;
+      border: 1px solid #bad0d9;
+      border-radius: 10px;
+      background: #f7fbfc;
+    }
+
+    .control label {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      min-height: 28px;
+      font-size: 15px;
+      font-weight: 700;
+    }
+
+    .readout {
+      color: var(--teal);
+      font-family: Consolas, monospace;
+      font-size: 18px;
+    }
+
+    input[type="range"] {
+      width: 100%;
+      height: 44px;
+      margin: 7px 0 0;
+      accent-color: var(--teal);
+      cursor: pointer;
+    }
+
+    input[type="range"]:disabled { cursor: not-allowed; opacity: .38; }
+    .range-note { color: var(--muted); font-size: 13px; }
+
+    .reset {
+      width: 104px;
+      border: 2px solid var(--ink);
+      color: var(--ink);
+      background: var(--white);
+    }
+
+    .concept-strip {
+      position: relative;
+      height: 50px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 18px;
+      padding: 0 28px;
+      color: var(--white);
+      background: var(--ink);
+      font-size: 15px;
+    }
+
+    #conceptText { font-weight: 700; }
+
+    details { max-width: 420px; }
+    summary { cursor: pointer; color: #bfeaea; }
+    details p {
+      position: absolute;
+      right: 22px;
+      bottom: 42px;
+      width: 430px;
+      margin: 0;
+      padding: 10px 12px;
+      border: 1px solid #8fb0bf;
+      border-radius: 8px;
+      color: var(--ink);
+      background: var(--white);
+      box-shadow: 0 6px 18px rgba(19,41,61,.18);
+    }
+
+    button:focus-visible, input:focus-visible, summary:focus-visible {
+      outline: 4px solid var(--evidence);
+      outline-offset: 3px;
+    }
+  </style>
+</head>
+<body>
+  <main class="simulator" id="simulator">
+    <header>
+      <h1>溫度計校準：看見斜率</h1>
+      <div class="stage-badge" id="stageBadge">預測</div>
+    </header>
+
+    <section class="instruction" aria-live="polite">
+      <p id="instructionText">先請學生預測：當溫度為 50 °C，液柱高度是多少？怎樣計算？</p>
+      <button class="primary" id="nextButton" type="button">顯示校準直線</button>
+    </section>
+
+    <section class="workspace" aria-label="溫度計與校準坐標圖">
+      <div class="panel-label thermo-label">實際液柱</div>
+      <div class="panel-label graph-label">校準坐標圖</div>
+      <div class="math-overlay y-axis-label">\(h/\mathrm{cm}\)</div>
+      <div class="math-overlay x-axis-label">\(T/{}^{\circ}\mathrm{C}\)</div>
+
+      <svg id="scene" viewBox="0 0 1100 416" role="img" aria-labelledby="sceneTitle sceneDescription">
+        <title id="sceneTitle">液柱溫度計與高度對溫度校準圖</title>
+        <desc id="sceneDescription">液柱頂端以水平虛線連到坐標圖上的溫度和高度點。</desc>
+
+        <g id="grid"></g>
+        <line class="axis" x1="525" y1="365" x2="850" y2="365"/>
+        <line class="axis" x1="545" y1="382" x2="545" y2="54"/>
+        <path class="axis" d="M850 365 l-12 -7 v14 z M545 54 l-7 12 h14 z" fill="var(--ink)"/>
+
+        <g id="thermometer">
+          <!-- 玻璃背景底色 -->
+          <path class="glass-bg" d="M 285 70 L 285 364 A 26 26 0 1 0 315 364 L 315 70 A 15 15 0 0 0 285 70 Z"/>
+          <!-- 毛細管底色 -->
+          <rect x="293" y="66" width="14" height="300" rx="4" fill="rgba(0,0,0,0.04)"/>
+          <!-- 感溫泡水銀 (純色無覆蓋) -->
+          <path d="M 293 366 A 20 20 0 1 0 307 366 Z" fill="var(--mercury)"/>
+          <!-- 毛細管液柱 (純色無覆蓋) -->
+          <rect class="mercury" id="liquidColumn" x="293" y="343" width="14" height="40" rx="2"/>
+          <!-- 感溫泡高光點 -->
+          <circle cx="294" cy="378" r="4" fill="rgba(255,255,255,0.45)"/>
+          <!-- 無縫單一玻璃管輪廓 (純描邊，不覆蓋水銀) -->
+          <path class="glass" d="M 285 70 L 285 364 A 26 26 0 1 0 315 364 L 315 70 A 15 15 0 0 0 285 70 Z"/>
+          <!-- 玻璃反射高光條 -->
+          <path d="M 289 75 L 289 358" stroke="rgba(255,255,255,0.85)" stroke-width="2.5" stroke-linecap="round"/>
+          <path d="M 284 376 A 18 18 0 0 0 294 400" fill="none" stroke="rgba(255,255,255,0.75)" stroke-width="2.5" stroke-linecap="round"/>
+          <g id="thermoTicks"></g>
+        </g>
+
+        <g id="fixedPoints">
+          <circle class="fixed-point" id="point0" r="5"/>
+          <circle class="fixed-point" id="point100" r="5"/>
+          <rect class="coordinate-box" id="label0Box" rx="6"/>
+          <text class="svg-value" id="label0"></text>
+          <rect class="coordinate-box" id="label100Box" rx="6"/>
+          <text class="svg-value" id="label100"></text>
+        </g>
+
+        <line class="calibration-line" id="calibrationLine" hidden/>
+        <path class="triangle" id="slopeTriangle" hidden/>
+        <line class="guide" id="heightGuide" hidden/>
+        <circle class="current-point" id="currentPoint" r="5.5" hidden/>
+        <rect class="coordinate-box" id="currentLabelBox" rx="6" hidden/>
+        <text class="svg-value" id="currentLabel" hidden></text>
+        <foreignObject id="deltaTLabel" width="64" height="32" hidden>
+          <div xmlns="http://www.w3.org/1999/xhtml" class="svg-math">\(\Delta T\)</div>
+        </foreignObject>
+        <foreignObject id="deltaHLabel" width="64" height="32" hidden>
+          <div xmlns="http://www.w3.org/1999/xhtml" class="svg-math">\(\Delta h\)</div>
+        </foreignObject>
+      </svg>
+
+      <aside class="slope-card" id="slopeCard" hidden>
+        <div class="equation" id="slopeEquation" aria-label="斜率計算"></div>
+        <div class="meaning" id="slopeMeaning"></div>
+      </aside>
+    </section>
+
+    <section class="controls" aria-label="模擬控制">
+      <div class="control">
+        <label for="temperature"><span>目標溫度 \(T\)</span><output class="readout" id="temperatureOut">50 °C</output></label>
+        <input id="temperature" type="range" min="0" max="100" step="1" value="50" disabled>
+        <div class="range-note">0–100 °C｜步幅 1 °C</div>
+      </div>
+      <div class="control">
+        <label for="height0"><span>低固定點 \(h_0\)</span><output class="readout" id="height0Out">2 cm</output></label>
+        <input id="height0" type="range" min="0" max="9" step="1" value="2" disabled>
+        <div class="range-note">0–9 cm｜步幅 1 cm</div>
+      </div>
+      <div class="control">
+        <label for="height100"><span>高固定點 \(h_{100}\)</span><output class="readout" id="height100Out">62 cm</output></label>
+        <input id="height100" type="range" min="10" max="100" step="1" value="62" disabled>
+        <div class="range-note">10–100 cm｜步幅 1 cm</div>
+      </div>
+      <button class="reset" id="resetButton" type="button">重設</button>
+    </section>
+
+    <footer class="concept-strip">
+      <div id="conceptText">斜率描述兩個物理量如何一起改變。</div>
+      <details id="modelDetails">
+        <summary>模型假設</summary>
+        <p>兩固定點之間為線性關係；不考慮玻璃膨脹、視差及非線性液體膨脹。</p>
+      </details>
+    </footer>
+  </main>
+
+  <script src="model.js"></script>
+  <script>
+    "use strict";
+
+    const state = { stage: 0, T: 50, h0: 2, h100: 62 };
+    const plot = { left: 545, right: 845, top: 65, bottom: 365, maxH: 100 };
+    const $ = (id) => document.getElementById(id);
+    const controls = [$("temperature"), $("height0"), $("height100")];
+
+    function xFor(T) { return plot.left + (T / 100) * (plot.right - plot.left); }
+    function yFor(h) { return plot.bottom - (h / plot.maxH) * (plot.bottom - plot.top); }
+    function setLine(element, x1, y1, x2, y2) {
+      element.setAttribute("x1", x1); element.setAttribute("y1", y1);
+      element.setAttribute("x2", x2); element.setAttribute("y2", y2);
+    }
+    function setHidden(id, hidden) { $(id).toggleAttribute("hidden", hidden); }
+    function fitLabelBox(labelId, boxId) {
+      const label = $(labelId);
+      if (getComputedStyle(label).display === "none") return;
+      const bounds = label.getBBox();
+      const box = $(boxId);
+      box.setAttribute("x", bounds.x - 6);
+      box.setAttribute("y", bounds.y - 4);
+      box.setAttribute("width", bounds.width + 12);
+      box.setAttribute("height", bounds.height + 8);
+    }
+
+    function renderMath(id, latex) {
+      const element = $(id);
+      element.dataset.latex = latex;
+      if (window.katex) katex.render(latex, element, { throwOnError: false });
+    }
+
+    function buildGrid() {
+      const grid = $("grid");
+      let markup = "";
+      for (let T = 0; T <= 100; T += 10) {
+        const x = xFor(T);
+        if (T % 20 === 0) {
+          markup += `<line class="axis" x1="${x}" y1="${plot.bottom}" x2="${x}" y2="${plot.bottom + 6}"/>`;
+          markup += `<text class="tick-text" x="${x}" y="386" text-anchor="middle">${T}</text>`;
+        }
+      }
+      for (let h = 0; h <= 100; h += 10) {
+        const y = yFor(h);
+        if (h > 0 && h % 20 === 0) {
+          markup += `<line class="axis" x1="${plot.left - 6}" y1="${y}" x2="${plot.left}" y2="${y}"/>`;
+          markup += `<text class="tick-text" x="${plot.left - 10}" y="${y + 4}" text-anchor="end">${h}</text>`;
+        }
+      }
+      grid.innerHTML = markup;
+    }
+
+    function renderThermometerTicks() {
+      const ticks = $("thermoTicks");
+      const values = [state.h0, state.h100];
+      ticks.innerHTML = values.map((h, index) => {
+        const y = yFor(h);
+        const fixedT = index === 0 ? 0 : 100;
+        return index === 0
+          ? `<line class="axis" x1="268" y1="${y}" x2="284" y2="${y}"/>
+            <text class="svg-value" x="260" y="${y + 5}" text-anchor="end">${fixedT} °C</text>`
+          : `<line class="axis" x1="316" y1="${y}" x2="332" y2="${y}"/>
+            <text class="svg-value" x="340" y="${y + 5}">${fixedT} °C</text>`;
+      }).join("");
+    }
+
+    function updateSimulation() {
+      const h = ThermometerModel.heightAt(state.T, state.h0, state.h100);
+      const m = ThermometerModel.slope(state.h0, state.h100);
+      const compactTriangle = state.h100 - state.h0 <= 5;
+      const x0 = xFor(0), x100 = xFor(100), x = xFor(state.T);
+      const y0 = yFor(state.h0), y100 = yFor(state.h100), y = yFor(h);
+
+      $("temperatureOut").textContent = `${state.T} °C`;
+      $("height0Out").textContent = `${state.h0} cm`;
+      $("height100Out").textContent = `${state.h100} cm`;
+
+      $("liquidColumn").setAttribute("y", y);
+      $("liquidColumn").setAttribute("height", 366 - y);
+      renderThermometerTicks();
+
+      $("point0").setAttribute("cx", x0); $("point0").setAttribute("cy", y0);
+      $("point100").setAttribute("cx", x100); $("point100").setAttribute("cy", y100);
+      $("label0").setAttribute("x", x0 - 10); $("label0").setAttribute("y", y0 - 10);
+      $("label0").setAttribute("text-anchor", "end");
+      $("label100").setAttribute("x", x100 + 10);
+      $("label100").setAttribute("y", y100 - 10);
+      $("label100").setAttribute("text-anchor", "start");
+      $("label0").textContent = `(0, ${state.h0})`;
+      $("label100").textContent = `(100, ${state.h100})`;
+
+      setLine($("calibrationLine"), x0, y0, x100, y100);
+      const T1 = 20, T2 = 70;
+      const h1 = ThermometerModel.heightAt(T1, state.h0, state.h100);
+      const h2 = ThermometerModel.heightAt(T2, state.h0, state.h100);
+      const x1 = xFor(T1), x2 = xFor(T2);
+      const y1 = yFor(h1), y2 = yFor(h2);
+
+      $("slopeTriangle").setAttribute("d", `M ${x1} ${y1} L ${x2} ${y1} L ${x2} ${y2} Z`);
+      $("deltaTLabel").setAttribute("x", (x1 + x2) / 2 - 32);
+      $("deltaTLabel").setAttribute("y", y1 + 6);
+      $("deltaHLabel").setAttribute("x", x2 + 8);
+      $("deltaHLabel").setAttribute("y", (y1 + y2) / 2 - 16);
+
+      setLine($("heightGuide"), 316, y, x, y);
+      $("currentPoint").setAttribute("cx", x); $("currentPoint").setAttribute("cy", y);
+      $("currentLabel").setAttribute("x", x - 12);
+      $("currentLabel").setAttribute("text-anchor", "end");
+      $("currentLabel").setAttribute("y", y - 12);
+      $("currentLabel").textContent = `(${state.T}, ${h.toFixed(1)})`;
+
+      renderMath("slopeEquation", String.raw`m=\frac{\Delta h}{\Delta T}=\frac{${state.h100}-${state.h0}}{100-0}=${m.toFixed(2)}\ \mathrm{cm\,{}^{\circ}C^{-1}}`);
+      $("slopeMeaning").textContent = `溫度每升高 1 °C，液柱高度增加 ${m.toFixed(2)} cm。`;
+      renderStage();
+      fitLabelBox("label0", "label0Box");
+      fitLabelBox("label100", "label100Box");
+      fitLabelBox("currentLabel", "currentLabelBox");
+    }
+
+    function renderStage() {
+      const stageText = ["預測", "觀察直線", "拆解斜率", "自由探索"];
+      const instructions = [
+        "先請學生預測：當溫度為 50 °C，液柱高度是多少？怎樣計算？",
+        "兩固定點決定一條直線。先指出橫軸和縱軸分別是哪個物理量。",
+        "沿黃色三角形讀出高度改變與溫度改變，再寫出斜率。",
+        "調校三個滑桿，比較液柱、圖點和斜率如何同步改變。"
+      ];
+      const buttonText = ["顯示校準直線", "拆解斜率", "開始探索"];
+      const lineVisible = state.stage >= 1;
+      const slopeVisible = state.stage >= 2;
+      const exploreVisible = state.stage >= 3;
+
+      $("stageBadge").textContent = stageText[state.stage];
+      $("instructionText").textContent = instructions[state.stage];
+      setHidden("nextButton", exploreVisible);
+      if (!exploreVisible) $("nextButton").textContent = buttonText[state.stage];
+
+      setHidden("calibrationLine", !lineVisible);
+      setHidden("slopeTriangle", !slopeVisible);
+      setHidden("deltaTLabel", !slopeVisible);
+      setHidden("deltaHLabel", !slopeVisible);
+      setHidden("slopeCard", !slopeVisible);
+      setHidden("heightGuide", !slopeVisible);
+      setHidden("currentPoint", !slopeVisible);
+      setHidden("currentLabel", !slopeVisible);
+      setHidden("currentLabelBox", !slopeVisible);
+      const compactTriangle = state.h100 - state.h0 <= 5;
+      const hideLowLabel = slopeVisible && (compactTriangle || state.T <= 35);
+      const hideHighLabel = slopeVisible && (compactTriangle || state.T >= 65);
+      setHidden("label0", hideLowLabel);
+      setHidden("label0Box", hideLowLabel);
+      setHidden("label100", hideHighLabel);
+      setHidden("label100Box", hideHighLabel);
+      $("liquidColumn").setAttribute("visibility", state.stage === 0 ? "hidden" : "visible");
+      controls.forEach((control) => { control.disabled = !exploreVisible; });
+
+      $("conceptText").textContent = slopeVisible
+        ? "斜率是液柱高度的改變與溫度改變之比：高度對溫度的改變率。"
+        : "斜率描述兩個物理量如何一起改變。";
+    }
+
+    function reset() {
+      Object.assign(state, { stage: 0, T: 50, h0: 2, h100: 62 });
+      $("temperature").value = state.T;
+      $("height0").value = state.h0;
+      $("height100").value = state.h100;
+      $("modelDetails").open = false;
+      updateSimulation();
+    }
+
+    $("nextButton").addEventListener("click", () => {
+      state.stage = Math.min(3, state.stage + 1);
+      updateSimulation();
+    });
+    $("resetButton").addEventListener("click", reset);
+    $("temperature").addEventListener("input", (event) => { state.T = Number(event.target.value); updateSimulation(); });
+    $("height0").addEventListener("input", (event) => { state.h0 = Number(event.target.value); updateSimulation(); });
+    $("height100").addEventListener("input", (event) => { state.h100 = Number(event.target.value); updateSimulation(); });
+
+    window.updateSimulation = updateSimulation;
+    document.addEventListener("DOMContentLoaded", () => {
+      buildGrid();
+      if (window.renderMathInElement) {
+        renderMathInElement(document.body, { delimiters: [{ left: "\\(", right: "\\)", display: false }], throwOnError: false });
+      }
+      updateSimulation();
+    });
+  </script>
+</body>
+</html>
