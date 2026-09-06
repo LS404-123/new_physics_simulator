@@ -1,0 +1,288 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+  <title>兩點校準：由電阻推算溫度</title>
+  <link rel="stylesheet" href="../HEAT/thermometer-calibration-slope/katex/katex.min.css">
+  <script defer src="../HEAT/thermometer-calibration-slope/katex/katex.min.js"></script>
+  <script defer src="model.js"></script>
+  <style>
+    :root { --ink:#183449; --muted:#597080; --blue:#2367c5; --teal:#087c72; --paper:#f5f9fc; --line:#d6e2ea; }
+    * { box-sizing:border-box; }
+    [hidden] { display:none !important; }
+    html,body { margin:0; width:100%; height:100%; }
+    body { background:#e3edf3; color:var(--ink); font:16px/1.5 "Microsoft JhengHei",sans-serif; display:grid; place-items:center; }
+    button,input { font:inherit; } button,a,input { -webkit-tap-highlight-color:transparent; }
+    button { cursor:pointer; min-height:46px; border:1px solid var(--line); border-radius:9px; background:white; color:var(--ink); padding:8px 13px; font-weight:700; }
+    button:hover { background:#edf3fa; } button:disabled { opacity:.4; cursor:default; }
+    :focus-visible { outline:3px solid #b15b00; outline-offset:3px; }
+    .app { width:1140px; height:768px; padding:24px; display:grid; grid-template-rows:64px 52px minmax(0,1fr) 24px; gap:16px; background:var(--paper); }
+    header { display:flex; align-items:center; justify-content:space-between; gap:16px; }
+    h1 { margin:0; font:700 30px/1.3 "PMingLiU",serif; }
+    .header-actions { display:flex; align-items:center; gap:12px; }
+    header a { color:var(--muted); padding:12px; text-decoration:none; white-space:nowrap; font-size:14px; }
+    .flow-strip { display:flex; align-items:center; justify-content:center; gap:18px; background:#eaf1f6; border-radius:10px; font-size:15px; }
+    .flow-strip span[aria-current=step] { color:var(--blue); font-weight:700; }
+    .flow-strip b { color:#8096a5; font-size:16px; font-weight:400; }
+    .workspace { min-height:0; display:grid; grid-template-columns:1fr; grid-template-rows:minmax(0,1fr); }
+    aside { min-height:0; display:grid; grid-template-columns:minmax(0,1fr) 280px; gap:32px; }
+    .instrument { min-height:0; background:white; border:1px solid #bed0dc; border-radius:16px; padding:24px; display:flex; flex-direction:column; }
+    #bath { display:block; width:100%; flex:1; min-height:0; margin:16px 0; }
+    svg text { font-family:"Microsoft JhengHei",sans-serif; font-size:15px; fill:var(--muted); }
+    #bath text { fill:var(--muted); font-size:11px; }
+    #bath .meter-label { fill:#25435b; font-size:11px; font-weight:700; }
+    #bath #multimeter-value { fill:#e2f5ff; font:500 20px Consolas,monospace; }
+    input[type=range] { display:block; width:100%; flex-shrink:0; margin:0; height:44px; accent-color:var(--teal); cursor:pointer; }
+    .ends { display:flex; justify-content:space-between; font-size:12px; color:var(--muted); }
+    .intro { align-self:center; padding-right:8px; }
+    .intro h2 { margin:0 0 14px; font-size:26px; line-height:1.5; }
+    .intro p { margin:0 0 24px; color:var(--muted); line-height:1.8; }
+    .known-points { margin:0 0 24px; display:grid; grid-template-columns:1fr 1fr; gap:8px; font-size:14px; }
+    .known-points div { padding:10px; border:1px solid var(--line); border-radius:9px; }
+    .known-points dt { color:var(--muted); } .known-points dd { margin:4px 0 0; font:700 17px Consolas,monospace; }
+    #explain,#next { background:var(--blue); border-color:var(--blue); color:white; }
+    #explain { min-width:180px; }
+    .graph-panel { min-width:0; min-height:0; background:white; border:1px solid var(--line); border-radius:12px; display:grid; grid-template-rows:48px minmax(0,1fr); }
+    .legend { display:flex; align-items:center; gap:24px; padding:0 20px; font-size:14px; }
+    .legend span { display:flex; align-items:center; gap:9px; } .sample { display:inline-block; width:30px; border-top:3px solid var(--teal); } .sample.dotted { border-top:3px dashed var(--blue); }
+    #graph { width:100%; height:100%; min-height:0; }
+    .axis { stroke:var(--ink); stroke-width:1.8; } .grid { stroke:#e8eef2; stroke-width:1; }
+    .curve { fill:none; stroke:var(--teal); stroke-width:3.5; } .calibration { fill:none; stroke:var(--blue); stroke-width:3; stroke-dasharray:8 7; }
+    .flow { fill:none; stroke-width:2.5; stroke-linecap:round; stroke-linejoin:round; }
+    .halo { paint-order:stroke; stroke:white; stroke-width:7px; stroke-linejoin:round; }
+    .presets { display:flex; gap:8px; margin-top:6px; }
+    .presets button { flex:1; min-height:44px; padding:4px; background:white; border-color:#b4cad8; color:#25435b; font-size:13px; }
+    .presets button[aria-pressed=true] { background:#e0efec; border-color:var(--teal); color:var(--teal); }
+    .step-panel { min-height:0; background:white; border:1px solid var(--line); border-radius:12px; padding:14px; }
+    .step-heading { margin:0 0 10px; color:var(--muted); font-size:13px; }
+    #step-title { margin:0 0 10px; font-size:20px; line-height:1.4; }
+    #step-copy { margin:0; color:var(--muted); font-size:15px; line-height:1.6; }
+    .buttons { display:grid; grid-template-columns:1fr 1fr; gap:8px; }
+    #reset,#math-open { min-height:44px; padding:5px; font-size:14px; }
+    footer { color:var(--muted); font-size:12px; }
+    .app[data-explaining=true] .workspace { grid-template-columns:minmax(0,1fr) 280px; gap:16px; }
+    .app[data-explaining=true] aside { grid-template-columns:1fr; grid-template-rows:240px minmax(0,1fr) 98px; gap:12px; }
+    .app[data-explaining=true] .instrument { padding:12px 14px; background:#edf3f6; border-radius:12px; }
+    .app[data-explaining=true] #bath { margin:4px 0; }
+    .app[data-explaining=true] .ends { font-size:11px; line-height:14px; }
+    dialog { width:min(540px,calc(100vw - 32px)); padding:28px; border:1px solid #b4cad8; border-radius:16px; color:var(--ink); box-shadow:0 16px 60px #18344940; }
+    dialog::backdrop { background:#18344980; }
+    dialog h2 { margin:0 0 12px; font-size:23px; }
+    dialog p { color:var(--muted); font-size:14px; }
+    dialog .equation { margin:20px 0; }
+    dialog .math-note { font-size:12px; }
+    dialog form { margin-top:24px; text-align:right; }
+    .katex { font-size:1.05em; }
+    :root { view-transition-name:none; }
+    .instrument { view-transition-name:instrument; }
+    #bath { view-transition-name:apparatus; }
+    #temperature { view-transition-name:temperature-slider; }
+    .ends { view-transition-name:slider-labels; }
+    #presets { view-transition-name:presets; }
+    #graph-panel { view-transition-name:graph; }
+    #intro { view-transition-name:intro; }
+    #step-panel { view-transition-name:steps; }
+    #step-buttons { view-transition-name:controls; }
+    #observe { view-transition-name:back; }
+    ::view-transition-group(*) { animation-duration:600ms; animation-timing-function:cubic-bezier(.22,1,.36,1); }
+    ::view-transition-old(*),::view-transition-new(*) { height:100%; animation-duration:140ms; }
+    ::view-transition-group(instrument) { z-index:2; }
+    ::view-transition-group(apparatus),::view-transition-group(temperature-slider),::view-transition-group(slider-labels),::view-transition-group(presets) { z-index:3; }
+    ::view-transition-old(apparatus) { display:none; }
+    ::view-transition-new(apparatus) { height:100%; object-fit:contain; animation:none; }
+    :root:has(.app[data-explaining=true])::view-transition-old(apparatus) { display:block; height:100%; object-fit:contain; animation:apparatus-out 160ms 440ms both; }
+    :root:has(.app[data-explaining=true])::view-transition-new(apparatus) { animation:apparatus-in 160ms 440ms both; }
+    ::view-transition-old(graph),::view-transition-old(intro),::view-transition-old(steps),::view-transition-old(controls),::view-transition-old(back) { animation:panel-out 160ms ease-in both; }
+    ::view-transition-new(graph),::view-transition-new(intro),::view-transition-new(steps),::view-transition-new(controls),::view-transition-new(back) { animation:panel-in 360ms 160ms ease-out both; }
+    @keyframes panel-in { from { opacity:0; transform:translateY(12px); } to { opacity:1; transform:translateY(0); } }
+    @keyframes panel-out { to { opacity:0; transform:translateY(-8px); } }
+    @keyframes apparatus-in { from { opacity:0; } to { opacity:1; } }
+    @keyframes apparatus-out { from { opacity:1; } to { opacity:0; } }
+    @media (prefers-reduced-motion:reduce) {
+      ::view-transition-group(*),::view-transition-old(*),::view-transition-new(*) { animation:none !important; }
+    }
+    @media (max-width:1139px) {
+      .app { width:100%; height:100svh; padding:16px; gap:12px; }
+      h1 { font-size:26px; } aside { grid-template-columns:minmax(0,1fr) 250px; gap:20px; }
+      .app[data-explaining=true] .workspace { grid-template-columns:minmax(0,1fr) 260px; gap:12px; }
+    }
+    @media (orientation:portrait) {
+      .app { grid-template-rows:72px 52px minmax(0,1fr) 36px; }
+      aside { grid-template-columns:1fr; grid-template-rows:minmax(0,1fr) 240px; gap:20px; }
+      .intro { text-align:center; padding:0; } .intro h2 { font-size:24px; margin-bottom:6px; } .intro p { margin-bottom:14px; }
+      .known-points { max-width:320px; margin:0 auto 14px; }
+      .app[data-explaining=true] .workspace { grid-template-columns:1fr; grid-template-rows:minmax(0,1fr) 290px; }
+      .app[data-explaining=true] aside { grid-template-columns:1fr 1fr; grid-template-rows:minmax(0,1fr) 98px; gap:10px; }
+      .app[data-explaining=true] .instrument { grid-row:1/3; }
+      .header-actions { gap:4px; } .header-actions a { padding:8px; }
+    }
+  </style>
+</head>
+<body>
+<main id="app" class="app" data-explaining="false">
+  <header><h1>只知道兩點，能推算溫度嗎？</h1><div class="header-actions"><button id="observe" hidden>← 返回觀察</button><a href="../index.html">返回目錄 ↗</a></div></header>
+  <div id="flow-strip" class="flow-strip" role="group" aria-label="實驗與推算流程"><span id="flow-1">① 量度電阻</span><b aria-hidden="true">→</b><span id="flow-2">② 用校準直線換算</span><b aria-hidden="true">→</b><span id="flow-3">③ 讀出推算溫度</span></div>
+  <section class="workspace">
+    <div id="graph-panel" class="graph-panel" hidden>
+      <div class="legend"><span><i class="sample dotted"></i>假設的線性關係</span><span><i class="sample"></i>金屬的實際反應</span></div>
+      <svg id="graph" viewBox="0 0 780 460" role="img" aria-labelledby="graph-title graph-desc">
+        <title id="graph-title">電阻與溫度關係圖</title><desc id="graph-desc">由實際溫度找金屬電阻，再保持同一電阻水平轉到校準線，向下讀出推算溫度。</desc>
+        <defs><marker id="blue-arrow" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="5" markerHeight="5" orient="auto-start-reverse"><path d="M0 0 10 5 0 10Z" fill="#2367c5"/></marker><marker id="teal-arrow" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="5" markerHeight="5" orient="auto-start-reverse"><path d="M0 0 10 5 0 10Z" fill="#087c72"/></marker></defs>
+        <g id="axes"></g><path id="actual-curve" class="curve"/><path id="calibration-curve" class="calibration"/>
+        <g id="fixed-points"></g><g id="guides"></g><g id="paths"></g><g id="points"></g><g id="labels"></g>
+      </svg>
+    </div>
+    <aside>
+      <div class="instrument">
+        <svg id="bath" viewBox="0 0 250 132" role="img" aria-labelledby="bath-title bath-desc">
+          <title id="bath-title">萬用錶量度恆溫槽中金屬探頭的電阻</title><desc id="bath-desc"></desc>
+          <defs>
+            <linearGradient id="probe-metal"><stop stop-color="#a0b5c3"/><stop offset=".45" stop-color="#f8fcff"/><stop offset="1" stop-color="#829eaf"/></linearGradient>
+            <linearGradient id="meter-body" x2="0" y2="1"><stop stop-color="#f1d581"/><stop offset="1" stop-color="#d8ae48"/></linearGradient>
+          </defs>
+          <path d="M16 102H105" stroke="#bfced7" stroke-width="6" stroke-linecap="round"/>
+          <path d="M17 31V94Q17 100 23 100H95Q101 100 101 94V31" fill="#f9fdff" stroke="#7898ac" stroke-width="2"/>
+          <path d="M20 53Q29 49 39 53T59 53T79 53T98 53V94Q98 97 94 97H24Q20 97 20 93Z" fill="#6dc2ce" fill-opacity=".72"/>
+          <path d="M23 57V91" stroke="#f4ffff" stroke-width="2" opacity=".85"/>
+          <rect x="53" y="26" width="12" height="62" rx="6" fill="url(#probe-metal)" stroke="#7893a5"/>
+          <rect x="52" y="24" width="14" height="14" rx="3" fill="#466378"/>
+          <path d="M56 62H62L56 66H62L56 70H62L56 74H62L56 78H62" fill="none" stroke="#496577" stroke-width="1.3"/>
+          <rect x="124" y="12" width="124" height="102" rx="9" fill="url(#meter-body)" stroke="#aa842d"/>
+          <text class="meter-label" x="186" y="28" text-anchor="middle">萬用錶</text>
+          <rect x="131" y="35" width="110" height="32" rx="4" fill="#183b52"/>
+          <text id="multimeter-value" x="186" y="58" text-anchor="middle"></text>
+          <circle cx="162" cy="87" r="12" fill="#354e5e" stroke="#1f3542"/>
+          <path d="M162 86L169 79" stroke="#f7fbfd" stroke-width="3" stroke-linecap="round"/>
+          <text x="180" y="82" style="fill:#25435b;font-weight:700">Ω</text>
+          <text x="205" y="93" text-anchor="middle" style="font-size:8px;fill:#25435b">Ω</text>
+          <text x="231" y="93" text-anchor="middle" style="font-size:8px;fill:#25435b">COM</text>
+          <circle cx="205" cy="103" r="4" fill="#b4433c"/><circle cx="231" cy="103" r="4" fill="#283c49"/>
+          <path d="M55 26V12Q55 7 60 7H109Q113 7 113 12V117Q113 122 118 122H200Q205 122 205 117V103" fill="none" stroke="#b4433c" stroke-width="2"/>
+          <path d="M63 26V21Q63 16 68 16H100Q105 16 105 21V122Q105 128 111 128H225Q231 128 231 122V103" fill="none" stroke="#283c49" stroke-width="2"/>
+          <text x="59" y="119" text-anchor="middle">金屬探頭</text>
+        </svg>
+        <input id="temperature" type="range" min="-20" max="120" value="60" step="1" aria-label="恆溫槽實際溫度">
+        <div class="ends"><span>降低溫度</span><span>提高溫度</span></div>
+        <div id="presets" class="presets" aria-label="檢查校準點"><button id="zero">0 °C 校準點</button><button id="hundred">100 °C 校準點</button></div>
+      </div>
+      <div id="intro" class="intro"><h2>量到電阻，<br>怎樣推算溫度？</h2><p>只已知兩個固定點的電阻。</p><dl class="known-points"><div><dt>0 °C</dt><dd id="known-zero"></dd></div><div><dt>100 °C</dt><dd id="known-hundred"></dd></div></dl><button id="explain">解釋讀數 →</button></div>
+      <div id="step-panel" class="step-panel" aria-live="polite" hidden><p class="step-heading" id="step-count"></p><h2 id="step-title"></h2><p id="step-copy"></p></div>
+      <div id="step-buttons" class="buttons" hidden><button id="previous">← 上一步</button><button id="next">下一步 →</button><button id="reset">↺ 重設</button><button id="math-open">數值與計算</button></div>
+    </aside>
+  </section>
+  <footer>教學示意 · 探頭與恆溫槽已達熱平衡；實際曲線在圖解中揭示。</footer>
+</main>
+<dialog id="math-details" aria-labelledby="math-title">
+  <h2 id="math-title">讀數怎樣換算？</h2>
+  <p>把萬用錶量得的電阻，代入兩個固定點之間假設的線性關係，推算溫度。</p>
+  <div id="math-calibration" class="equation"></div>
+  <p id="math-resistance"></p>
+  <div id="math-formula" class="equation"></div>
+  <div id="math-example" class="equation"></div>
+  <p class="math-note">以上為教學示意數值；金屬曲線的偏離已誇大。</p>
+  <form method="dialog"><button>返回圖解</button></form>
+</dialog>
+<script>
+window.addEventListener('DOMContentLoaded', () => {
+  'use strict';
+  const { calibration, actual, reading } = ResistanceModel;
+  const $ = id => document.getElementById(id);
+  const setText = (id, text) => { if ($(id).textContent !== String(text)) $(id).textContent = text; };
+  setText('known-zero', `${calibration(0).toFixed(2)} Ω`);
+  setText('known-hundred', `${calibration(100).toFixed(2)} Ω`);
+  const state = { temperature:60, step:0, explaining:false };
+  const x = t => 98 + (t + 40) / 180 * 612;
+  const y = r => 350 - r / 160 * 290;
+  const line = (a,b,attrs='') => `<line x1="${a[0]}" y1="${a[1]}" x2="${b[0]}" y2="${b[1]}" ${attrs}/>`;
+  const dot = (p,color) => `<circle cx="${p[0]}" cy="${p[1]}" r="6" fill="white" stroke="${color}" stroke-width="3"/>`;
+  const label = (px,py,text,color='#183449',anchor='start') => `<text class="halo" x="${px}" y="${py}" text-anchor="${anchor}" style="fill:${color};font-weight:700">${text}</text>`;
+  let axes = '';
+  for (let t=-40;t<=140;t+=20) {
+    axes += line([x(t),60],[x(t),y(0)],'class="grid"');
+    if(t===100) axes += `<text x="${x(t)}" y="375" text-anchor="middle">${t}</text>`;
+  }
+  for (let r=20;r<=160;r+=20) axes += line([98,y(r)],[710,y(r)],'class="grid"');
+  $('axes').innerHTML = axes + line([x(0),45],[x(0),y(0)],'id="resistance-axis" class="axis"') + line([98,y(0)],[730,y(0)],'id="temperature-axis" class="axis"') + `<text x="${x(0)-10}" y="375" text-anchor="end">0</text><text x="${x(0)}" y="28" text-anchor="middle">電阻</text><text x="710" y="450" text-anchor="end">溫度 / °C</text>`;
+  const curve = (fn,min,max) => Array.from({length:max-min+1},(_,i) => `${i?'L':'M'}${x(i+min)},${y(fn(i+min))}`).join(' ');
+  $('actual-curve').setAttribute('d',curve(actual,-20,120));
+  $('calibration-curve').setAttribute('d',curve(calibration,-40,140));
+  $('fixed-points').innerHTML = [0,100].map(t => dot([x(t),y(actual(t))],'#183449')).join('');
+
+  function render() {
+    const s = reading(state.temperature), step = state.step;
+    const start=[x(s.temperature),y(0)], metal=[start[0],y(s.resistance)];
+    const calibrated=[x(s.indicatedTemperature),metal[1]], indicated=[calibrated[0],y(0)];
+    const segments = [[start,metal],[metal,calibrated],[calibrated,indicated]];
+    const error = s.indicatedTemperature-s.temperature;
+    const feedback = Math.abs(error)<1e-8 ? '校準點上兩線重合，推算溫度準確。再調整溫度，看看其他位置。' : `按虛線換算後，推算溫度偏${error>0?'高':'低'}。試試兩個校準點，再移到它們之間。`;
+    const steps = [
+      ['先觀察讀數','調整外界溫度，用萬用錶量度電阻。'],
+      ['① 萬用錶量度電阻','溫度改變，金屬的電阻也改變。圖解揭示金屬的實際反應。'],
+      ['② 用校準直線換算','將量得的電阻代入兩點連成的直線。水平移動，電阻不變。'],
+      ['③ 讀出推算溫度',feedback]
+    ];
+    setText('multimeter-value', `${s.resistance.toFixed(2)} Ω`);
+    setText('bath-desc', `萬用錶電阻檔，量得金屬探頭電阻 ${s.resistance.toFixed(2)} Ω。`);
+    for(let i=1;i<=3;i++) $(`flow-${i}`).setAttribute('aria-current',(state.explaining?step:1)===i?'step':'false');
+    $('zero').setAttribute('aria-pressed',String(s.temperature===0));
+    $('hundred').setAttribute('aria-pressed',String(s.temperature===100));
+    setText('step-count', `讀圖路徑 · ${step} / 3`);
+    setText('step-title', steps[step][0]); setText('step-copy', steps[step][1]);
+    setText('graph-desc', steps[step].join('。'));
+    $('previous').disabled=step<=1;
+    $('next').disabled=step===3;
+    $('guides').innerHTML=step>=1?line([98,metal[1]],[Math.max(x(0),metal[0]),metal[1]],'stroke="#087c72" stroke-width="1" stroke-dasharray="3 5"'):'';
+    $('paths').innerHTML=segments.slice(0,step).map(([p,q],i)=>{
+      if(Math.hypot(q[0]-p[0],q[1]-p[1])<.01) return '';
+      const color=i===0?'teal':'blue';
+      return line(p,q,`class="flow" stroke="var(--${color})" marker-end="url(#${color}-arrow)"`);
+    }).join('');
+    $('points').innerHTML=dot(start,'#087c72')+(step>=1?dot(metal,'#087c72'):'')+(step>=2?dot(calibrated,'#2367c5'):'')+(step>=3?dot(indicated,'#2367c5'):'');
+    let labels=label(start[0],394,`實際 ${s.temperature} °C`,'#087c72','middle');
+    if(step>=1) labels+=label(90,metal[1]+5,'量得電阻','#087c72','end');
+    if(step>=2 && Math.abs(error)>1e-8) {
+      const nearLeft = Math.max(metal[0],calibrated[0])<300;
+      labels+=label(nearLeft?Math.max(x(0)+20,Math.max(metal[0],calibrated[0])+36):(metal[0]+calibrated[0])/2,metal[1]-18,'同一電阻','#2367c5',nearLeft?'start':'middle');
+    }
+    if(step>=3) labels+=label(indicated[0],417,`推算 ${s.indicatedTemperature.toFixed(1)} °C`,'#2367c5',indicated[0]<180?'start':'middle');
+    $('labels').innerHTML=labels;
+  }
+  function setTemperature(temperature) { state.temperature=temperature; $('temperature').value=temperature; render(); }
+  let layoutTransition;
+  function showExplanation(explaining) {
+    const update = () => {
+      state.explaining=explaining;
+      $('app').setAttribute('data-explaining',String(explaining));
+      for(const id of ['graph-panel','step-panel','step-buttons','observe']) $(id).hidden=!explaining;
+      $('intro').hidden=explaining;
+      if(explaining && state.step===0) state.step=1;
+      render();
+      $(explaining?(state.step===3?'previous':'next'):'explain').focus();
+    };
+    layoutTransition?.skipTransition();
+    if(document.startViewTransition && !window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+      layoutTransition=document.startViewTransition(update);
+    } else update();
+  }
+  $('temperature').addEventListener('input',event=>setTemperature(Number(event.target.value)));
+  $('zero').addEventListener('click',()=>setTemperature(0));
+  $('hundred').addEventListener('click',()=>setTemperature(100));
+  $('explain').addEventListener('click',()=>showExplanation(true));
+  $('observe').addEventListener('click',()=>showExplanation(false));
+  $('previous').addEventListener('click',()=>{ if(state.explaining) state.step=Math.max(1,state.step-1); render(); });
+  $('next').addEventListener('click',()=>{ if(state.explaining) state.step=Math.min(3,state.step+1); render(); });
+  $('reset').addEventListener('click',()=>{ state.step=0; setTemperature(60); showExplanation(false); });
+  $('math-open').addEventListener('click',()=>{
+    const s=reading(state.temperature), r0=calibration(0), r100=calibration(100);
+    setText('math-resistance', `萬用錶量得的電阻：${s.resistance.toFixed(2)} Ω`);
+    katex.render(String.raw`R_0=${r0}\,\Omega,\qquad R_{100}=${r100}\,\Omega`, $('math-calibration'));
+    katex.render(String.raw`T_{\text{推算}}=\frac{R-R_0}{R_{100}-R_0}\times100\,{}^\circ\mathrm C`, $('math-formula'));
+    katex.render(String.raw`=\frac{${s.resistance.toFixed(2)}-${r0}}{${r100}-${r0}}\times100\,{}^\circ\mathrm C=${s.indicatedTemperature.toFixed(1)}\,{}^\circ\mathrm C`, $('math-example'));
+    $('math-details').showModal();
+  });
+  render();
+});
+</script>
+</body>
+</html>

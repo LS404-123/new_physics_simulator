@@ -8,8 +8,8 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;600;700&amp;family=Noto+Serif+TC:wght@700;900&amp;display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="./styles.css">
-  <script defer src="./simulations.js?v=3"></script>
+  <link rel="stylesheet" href="./styles.css?v=5">
+  <script defer src="./simulations.js?v=7"></script>
 </head>
 <body>
   <a class="skip-link" href="#catalogue">跳至模擬器目錄</a>
@@ -70,6 +70,18 @@
         </label>
       </div>
 
+      <section class="sort-tools" id="sort-tools" aria-label="排序編輯工具" hidden>
+        <p>拖曳卡片的「拖曳」按鈕，或按 ↑／↓，調整同一課題內的順序。</p>
+        <p>按「儲存排序」直接更新專案的設定檔。重新發布網站後，所有訪客便會看到新順序。</p>
+        <div class="sort-actions">
+          <button class="export-order" type="button" id="save-order" disabled>儲存排序</button>
+          <button type="button" id="restore-order">還原已載入順序</button>
+          <a href="./index.html#catalogue">返回一般目錄</a>
+        </div>
+        <p id="save-help" hidden>此頁未連上儲存服務。請執行 <code>python serve.py</code>，再<a href="http://127.0.0.1:8766/?sort=1" target="_blank" rel="noopener">開啟可直接儲存的排序頁</a>；目前未儲存的調整仍留在本頁。</p>
+        <p id="sort-status" role="status">尚未調整順序。</p>
+      </section>
+
       <div class="catalogue-layout">
         <aside class="topic-sidebar" aria-labelledby="topic-nav-title">
           <p class="sidebar-label" id="topic-nav-title">快速導航</p>
@@ -97,6 +109,7 @@
         <p>為課堂觀察與討論而設 · 所有物理計算均為確定性模型</p>
         <div class="footer-meta">
           <p>© 2026 物理模擬器目錄 · 保留所有權利</p>
+          <a href="?sort=1">排列卡片</a>
           <a href="https://github.com/LS404-123/new_physics_simulator" target="_blank" rel="noopener noreferrer">
             GitHub 原始碼 <span aria-hidden="true">↗</span>
           </a>

@@ -551,6 +551,12 @@ main {
   background: var(--line);
 }
 
+.topic-subtitle {
+  margin: -6px 0 18px;
+  color: var(--muted);
+  font-size: 14px;
+}
+
 .simulation-grid {
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
@@ -668,6 +674,36 @@ main {
 
 .simulation-card a:hover .preview img { transform: scale(1.025); }
 .simulation-card a:hover .card-action::after { transform: translateX(4px); }
+
+.sort-tools[hidden] { display: none; }
+.sort-tools { padding: 20px 0; border-bottom: 1px solid var(--line); }
+.sort-tools p { margin: 0 0 12px; }
+.sort-actions,.sort-controls { display: flex; align-items: center; flex-wrap: wrap; gap: 10px; }
+.sort-actions button,.sort-actions .export-order,.sort-controls button {
+  min-height: 44px;
+  padding: 8px 14px;
+  color: var(--blueprint);
+  background: #eef1ed;
+  border: 1px solid var(--line-dark);
+  cursor: pointer;
+}
+.sort-actions .export-order { color: white; background: var(--blueprint); text-decoration: none; }
+.sort-actions a { padding: 10px 0; }
+#sort-status { margin-top: 14px; color: var(--brass-dark); font-size: 14px; }
+.sort-actions button:disabled { opacity: .35; cursor: default; }
+.sort-controls { padding: 10px; border-bottom: 1px solid var(--line); background: #f4f6f3; }
+.sort-controls .sort-handle { margin-right: auto; cursor: grab; touch-action: none; user-select: none; }
+.sort-controls .sort-move { min-width: 44px; }
+.sort-controls button:disabled { opacity: .35; cursor: default; }
+.simulation-card.is-dragging { opacity: .5; }
+.simulation-card.drop-target { outline: 3px solid var(--signal); outline-offset: 3px; }
+.editing-order .background-stage,.editing-order .search-field,.editing-order .topic-sidebar { display: none; }
+.editing-order .catalogue-layout { grid-template-columns: 1fr; }
+.editing-order .simulation-card > a { height: auto; flex: 1; }
+.editing-order .simulation-card { display: flex; flex-direction: column; }
+.editing-order .catalogue-head { position: static; }
+.editing-order .catalogue { scroll-margin-top: 72px; }
+.editing-order .site-header::after { display: none; }
 
 .empty-state {
   padding: 54px 20px;
