@@ -1,0 +1,477 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="description" content="觀察陽光、地面與玻璃之間的能量轉移，理解紅外線的吸收、再輻射及溫室的熱收支。">
+  <title>溫室裡的熱往哪裡去？</title>
+  <link rel="stylesheet" href="../HEAT/thermometer-calibration-slope/katex/katex.min.css">
+  <script defer src="../HEAT/thermometer-calibration-slope/katex/katex.min.js"></script>
+  <style>
+    :root { --ink:#203f3c; --muted:#59716e; --line:#cbdcda; --green:#267063; --sun:#b9800b; --ir:#cb573f; --glass:#387eaa; --paper:#f0f6f5; }
+    * { box-sizing:border-box; }
+    [hidden] { display:none!important; }
+    html,body { margin:0; width:100%; height:100%; background:#dde9e7; color:var(--ink); font:14px "Microsoft JhengHei","Noto Sans TC",sans-serif; }
+    body { display:grid; place-items:center; }
+    button,input,a { -webkit-tap-highlight-color:transparent; }
+    button,input { font:inherit; }
+    button,a,input[type=range] { touch-action:manipulation; }
+    button { min-height:44px; cursor:pointer; border:1px solid var(--line); border-radius:9px; background:white; color:var(--ink); padding:8px 13px; font-weight:700; }
+    button:hover { background:#e8f2ef; }
+    button:disabled { opacity:.48; cursor:default; }
+    :focus-visible { outline:3px solid #b57b08; outline-offset:3px; }
+    a { color:var(--green); }
+    .app { width:1140px; height:768px; background:var(--paper); display:grid; grid-template-rows:70px 1fr 44px; }
+    .topbar { padding:0 22px; display:flex; align-items:center; gap:14px; border-bottom:1px solid var(--line); }
+    .brand-icon { width:37px; height:41px; flex:none; }
+    h1 { font:800 26px "PMingLiU","Noto Serif TC",serif; letter-spacing:.04em; margin:0 0 3px; }
+    .subtitle { font-size:12px; color:var(--muted); letter-spacing:.1em; }
+    .topbar a { margin-left:auto; display:flex; align-items:center; min-height:44px; text-decoration:none; }
+    .topbar button { font-size:12px; background:transparent; }
+    .workspace { min-height:0; display:grid; grid-template-columns:minmax(0,1fr) 310px; gap:14px; padding:14px 18px 10px; }
+    .left { display:grid; grid-template-rows:420px minmax(0,1fr); gap:14px; min-height:0; }
+    .panel { border:1px solid var(--line); border-radius:14px; background:#fff; min-width:0; }
+    .scene { overflow:hidden; display:grid; grid-template-rows:43px 1fr 46px; }
+    .panel-head { display:flex; align-items:center; justify-content:space-between; padding:0 16px; gap:12px; }
+    h2 { font-size:15px; margin:0; }
+    .small { font-size:12px; color:var(--muted); }
+    .scene-head { border-bottom:1px solid var(--line); }
+    .scene-wrap { min-height:0; background:#eaf3f5; }
+    #scene { width:100%; height:100%; display:block; }
+    #scene text { font-family:"Microsoft JhengHei",sans-serif; fill:var(--ink); }
+    #scene .note { font-size:12px; fill:#526f6b; }
+    #scene .label { font-size:14px; font-weight:700; }
+    .ray { fill:none; stroke-linecap:round; stroke-linejoin:round; stroke-width:1.5; opacity:.16; }
+    .sun-ray { stroke:#d7a01e; }
+    .radiation-key { display:flex; gap:14px; font-size:12px; }
+    .radiation-key span::before { content:""; display:inline-block; width:16px; height:3px; background:var(--c); margin-right:5px; vertical-align:middle; }
+    .ir-ray { stroke:var(--ir); }
+    .glass-ray { stroke:#b44639; }
+    .light-packet, .absorption-flash { pointer-events:none; }
+    .light-packet .core { stroke:white; stroke-width:1; }
+    .flow-group { transition:opacity .15s; }
+    .scene-tabs { display:flex; align-items:center; justify-content:space-around; gap:4px; padding:0 8px; border-top:1px solid var(--line); }
+    .scene-tabs button { border:0; border-radius:0; min-height:44px; font-size:12px; background:transparent; padding:8px; }
+    .scene-tabs button[aria-pressed=true] { color:var(--green); box-shadow:inset 0 -3px var(--green); }
+    .chart-panel { display:grid; grid-template-rows:38px 1fr; min-height:0; }
+    .chart-head { gap:8px; }
+    .legend { display:flex; gap:12px; font-size:11px; }
+    .legend span::before { content:""; display:inline-block; width:15px; height:3px; margin-right:4px; vertical-align:middle; background:var(--c); }
+    .chart-wrap { position:relative; min-height:0; padding:0 10px 5px; }
+    #chart { display:block; width:100%; height:100%; }
+    .sidebar { min-height:0; display:grid; grid-template-rows:235px 196px 1fr; gap:12px; }
+    .controls { padding:14px; background:#244d47; color:white; border:0; }
+    .control-head { display:flex; justify-content:space-between; align-items:baseline; margin-bottom:10px; }
+    .time { font:600 20px Consolas,monospace; font-variant-numeric:tabular-nums; }
+    .slider-label { display:flex; justify-content:space-between; align-items:center; }
+    .slider-label output { font:600 15px Consolas,monospace; color:#ffe19a; }
+    input[type=range] { width:100%; height:44px; margin:0; accent-color:#f3c45d; cursor:pointer; }
+    .control-note { font-size:11px; color:#c5dcd5; margin:0 0 6px; }
+    .control-row { display:grid; grid-template-columns:1fr 1fr; gap:8px; margin-bottom:6px; }
+    .controls button { font-size:12px; border-color:#64877e; background:transparent; color:white; }
+    .controls button:hover { background:#3e685f; }
+    .controls .primary { background:#f0c45e; border-color:#f0c45e; color:#253f34; }
+    .controls .primary:hover { background:#ffda82; }
+    .balance { padding:14px 16px; }
+    .balance-head { display:flex; justify-content:space-between; align-items:center; margin-bottom:9px; }
+    .balance-row { display:flex; align-items:center; justify-content:space-between; margin:8px 0 5px; font-size:13px; }
+    .value { font:600 18px Consolas,monospace; font-variant-numeric:tabular-nums; }
+    .bar { height:5px; border-radius:4px; background:#eaf0ee; overflow:hidden; }
+    .bar i { display:block; height:100%; width:0; background:var(--c); }
+    .net-row { border-top:1px solid var(--line); margin-top:12px; padding-top:10px; }
+    #balanceState { font-size:11px; color:var(--green); font-weight:700; }
+    .reflection { padding:13px 16px; background:#e3efeb; display:flex; flex-direction:column; gap:8px; }
+    .reflection p { margin:0; line-height:1.55; font-size:12px; }
+    .reflection button { font-size:12px; width:100%; margin-top:auto; background:#f7fbf9; }
+    .footer { border-top:1px solid var(--line); margin:0 18px; display:flex; align-items:center; justify-content:space-between; gap:12px; font-size:12px; }
+    #pathNote { max-width:790px; }
+    .footer .katex { font-size:1.02em; }
+    dialog { width:630px; max-width:calc(100vw - 32px); padding:28px; color:var(--ink); border:1px solid var(--line); border-radius:18px; background:#f7fbf9; box-shadow:0 20px 80px #17352c40; }
+    dialog::backdrop { background:#193c36aa; backdrop-filter:blur(5px); }
+    dialog h2 { font:700 27px "PMingLiU",serif; margin:8px 0 18px; }
+    dialog p { line-height:1.7; margin:10px 0; }
+    .eyebrow { color:var(--green); font-size:12px; letter-spacing:.15em; }
+    .choices { border:0; padding:0; margin:18px 0; display:grid; gap:8px; }
+    .choices legend { font-size:13px; padding:0 0 10px; }
+    .choice { display:flex; align-items:center; min-height:48px; gap:10px; border:1px solid var(--line); padding:10px 14px; background:white; border-radius:8px; cursor:pointer; }
+    .choice:has(input:checked) { border-color:var(--green); background:#e0eee8; }
+    .choice input { accent-color:var(--green); width:18px; height:18px; }
+    .dialog-actions { display:flex; align-items:center; justify-content:space-between; gap:12px; margin-top:18px; }
+    .dialog-actions .primary { background:var(--green); color:white; }
+    .model-copy { font-size:13px; }
+    .model-copy li { margin:10px 0; line-height:1.5; }
+    @media (prefers-reduced-motion:reduce) { * { transition:none!important; } .light-packet, .absorption-flash { display:none; } .ray { opacity:.55; } }
+    @media (max-width:1139px) {
+      body { display:block; }
+      .app { width:100%; height:100svh; min-height:740px; }
+      .workspace { grid-template-columns:minmax(0,1fr) 285px; padding:10px; gap:10px; }
+      .left { grid-template-rows:420px minmax(0,1fr); gap:10px; }
+      .topbar { padding:0 14px; }
+      h1 { font-size:23px; }
+      .subtitle { font-size:11px; }
+      .footer { margin:0 10px; font-size:11px; }
+    }
+    @media (max-width:820px) and (orientation:portrait) {
+      .app { min-height:1000px; grid-template-rows:70px 1fr 46px; }
+      .workspace { grid-template-columns:1fr; grid-template-rows:minmax(0,1fr) 376px; }
+      .left { grid-template-rows:minmax(300px,1fr) 188px; }
+      .sidebar { grid-template-columns:1fr 1fr; grid-template-rows:235px minmax(0,1fr); gap:10px; }
+      .controls { grid-row:1; }
+      .balance { grid-row:1; }
+      .reflection { grid-column:1 / -1; display:grid; grid-template-columns:1fr 260px; gap:4px 20px; }
+      .reflection h2 { grid-column:1; grid-row:1; }
+      .reflection #observation { grid-column:1; grid-row:2; }
+      .reflection #predictionRecord { grid-column:2; grid-row:1; }
+      .reflection button { grid-column:2; grid-row:2; }
+      .legend { gap:8px; }
+      .topbar button { padding:7px; }
+      .footer { align-items:flex-start; padding-top:7px; }
+      .footer .equation { display:none; }
+    }
+  </style>
+</head>
+<body>
+  <main class="app" id="app">
+    <header class="topbar">
+      <svg class="brand-icon" viewBox="0 0 38 44" aria-hidden="true"><path d="M3 41V18L19 4 35 18V41ZM3 18H35M19 4V41M3 30H35" fill="#dceee6" stroke="#347669" stroke-width="2"/><path d="M12 41V28H26V41" fill="#f0f6f5" stroke="#347669" stroke-width="2"/></svg>
+      <div><h1>溫室裡的熱往哪裡去？</h1><div class="subtitle">非紅外線 · 紅外線 · 吸收與再輻射</div></div>
+      <a href="../index.html">← 模擬器目錄</a>
+      <button id="modelButton" type="button">模型說明</button>
+    </header>
+    <div class="workspace">
+      <div class="left">
+        <section class="panel scene" aria-labelledby="sceneTitle">
+          <div class="panel-head scene-head"><h2 id="sceneTitle">追蹤光點：太陽 → 溫室 → 周圍</h2><div class="radiation-key" aria-label="輻射種類"><span style="--c:#d7a01e">非紅外線</span><span style="--c:#cb573f">紅外線</span></div></div>
+          <div class="scene-wrap">
+            <svg id="scene" viewBox="0 0 760 330" role="img" aria-labelledby="sceneCaption">
+              <title id="sceneCaption">跟隨黃色非紅外線光點從太陽出發，到玻璃後透射或反射。地面和植物吸收後重新發出紅色紅外線光點，玻璃吸收後向內、向外再輻射。</title>
+              <defs>
+                <linearGradient id="sky" x2="0" y2="1"><stop stop-color="#edf6f9"/><stop offset="1" stop-color="#d9eae5"/></linearGradient>
+                <linearGradient id="pane" x2="0" y2="1"><stop stop-color="#9fd2cd" stop-opacity=".2"/><stop offset="1" stop-color="#72ada3" stop-opacity=".3"/></linearGradient>
+                <linearGradient id="warmSoil"><stop stop-color="#90684a"/><stop offset="1" stop-color="#b58a59"/></linearGradient>
+                <radialGradient id="solarGlow"><stop stop-color="#fff2b0" stop-opacity=".95"/><stop offset=".45" stop-color="#f8c331" stop-opacity=".6"/><stop offset="1" stop-color="#edb028" stop-opacity="0"/></radialGradient>
+                <radialGradient id="infraredGlow"><stop stop-color="#ffe3bc" stop-opacity=".95"/><stop offset=".45" stop-color="#ed643e" stop-opacity=".65"/><stop offset="1" stop-color="#d74b31" stop-opacity="0"/></radialGradient>
+              </defs>
+              <rect width="760" height="330" fill="url(#sky)"/>
+              <path d="M0 271Q90 238 190 263T395 262T600 247T760 256V330H0Z" fill="#ceded0"/>
+              <path d="M0 294Q150 272 335 289T760 278V330H0Z" fill="#b4cdb8"/>
+              <path d="M173 270V136L316 53 461 136V270Z" fill="url(#pane)" stroke="#639790" stroke-width="3"/>
+              <path d="M461 136L582 108V242L461 270Z" fill="#a4ccc2" fill-opacity=".38" stroke="#639790" stroke-width="3"/>
+              <path d="M316 53L440 27 582 108 461 136Z" fill="#c3e2dc" fill-opacity=".62" stroke="#639790" stroke-width="3"/>
+              <path d="M173 136H461M245 94V270M389 94V270M316 54V270M522 122V256M378 40L523 122M210 115H425M486 54L365 82" fill="none" stroke="#82aaa1" stroke-width="1.8"/>
+              <path d="M165 270H461L589 240V255L461 288H165Z" fill="url(#warmSoil)"/>
+              <path d="M165 270H461L589 240" fill="none" stroke="#876148" stroke-width="4"/>
+              <g fill="#3c8165" stroke="#49745b" stroke-width="2">
+                <path d="M221 268V233M221 253Q198 252 201 235Q222 234 221 253M221 244Q219 224 239 221Q243 239 221 244"/>
+                <path d="M418 268V233M418 251Q394 250 397 233Q418 232 418 251M418 243Q418 222 438 224Q442 240 418 243"/>
+                <path d="M523 253V225M523 241Q504 239 507 225Q527 224 523 241M523 234Q525 216 542 218Q544 232 523 234"/>
+              </g>
+              <g id="sunGroup" class="flow-group" data-layer="sun">
+                <circle cx="65" cy="35" r="27" fill="#ffe6a1"/>
+                <circle cx="65" cy="35" r="18" fill="#efbd4b"/>
+                <text x="49" y="78" class="note">太陽</text>
+                <path id="incomingPath" class="ray sun-ray" d="M85 52L201 120"/>
+                <path id="solarPath" class="ray sun-ray" d="M201 120L450 266"/>
+                <path id="solarPlantPath" class="ray sun-ray" d="M201 120L420 236"/>
+                <path id="reflectionPath" class="ray sun-ray" d="M201 120L200 8"/>
+                <circle cx="201" cy="120" r="5" fill="#fff0b6" stroke="#bc8b26"/>
+                <rect x="213" y="13" width="112" height="46" rx="7" fill="#fff9e9"/>
+                <text x="224" y="31" class="label">玻璃反射</text><text id="reflectedScene" x="224" y="49" class="note">80 W/m²</text>
+                <rect x="16" y="166" width="158" height="70" rx="8" fill="#fff9e9"/>
+                <text x="27" y="187" class="label">非紅外線（可見光）</text><text x="27" y="207" class="note">地面與植物吸收陽光</text><text id="solarScene" x="27" y="225" class="note">吸收 320.0 W/m²</text>
+              </g>
+              <g class="flow-group" data-layer="ground">
+                <path id="groundPath" class="ray ir-ray" d="M450 266L333 63"/>
+                <path id="plantPath" class="ray ir-ray" d="M420 236L333 63"/>
+                <rect x="414" y="137" width="164" height="55" rx="7" fill="#fff9f2"/>
+                <text x="425" y="157" class="label">地面與植物放出紅外線</text><text id="emittedScene" x="425" y="180" style="font:700 18px Consolas,monospace;fill:#b24a36">418 W/m²</text>
+              </g>
+              <g class="flow-group" data-layer="glass">
+                <path id="returnPath" class="ray glass-ray" d="M333 63L330 266"/>
+                <path id="outsidePath" class="ray glass-ray" d="M333 63L589 44"/>
+                <rect x="18" y="244" width="156" height="70" rx="7" fill="#fff6f0"/>
+                <text x="29" y="264" class="label">玻璃向內再輻射</text><text id="returnedScene" x="29" y="287" style="font:700 18px Consolas,monospace;fill:#b44639">410 W/m²</text><text x="29" y="305" class="note">部分能量回到地面</text>
+                <rect x="596" y="23" width="150" height="62" rx="9" fill="#fff8f3" stroke="#ddbdad"/>
+                <text x="607" y="46" class="label">散失到周圍</text><text x="607" y="66" class="note">玻璃也向外再輻射</text>
+                <text x="600" y="103" class="note">保溫仍會散熱</text>
+              </g>
+              <g>
+                <rect x="588" y="156" width="154" height="84" rx="10" fill="#f6fcfa" stroke="#aac5bb"/>
+                <text x="600" y="179" class="label">玻璃吸收紅外線</text><text id="absorbedScene" x="600" y="209" style="font:700 24px Consolas,monospace;fill:#b44639">410 W/m²</text>
+                <text x="600" y="229" class="note">持續吸收與再輻射</text>
+                <text id="glassScene" x="344" y="21" class="label" style="fill:#387eaa">玻璃 20.0°C</text>
+                <rect x="199" y="293" width="355" height="27" rx="7" fill="#f7f5eb"/>
+                <text id="groundScene" x="214" y="312" class="label">地面與植物 20.0°C</text><text x="402" y="312" class="note">室外固定 20°C</text>
+              </g>
+              <g id="packetLayer" aria-hidden="true"></g>
+              <circle id="surfaceFlash" class="absorption-flash" cx="450" cy="266" r="0" fill="url(#solarGlow)"/>
+              <circle id="glassFlash" class="absorption-flash" cx="333" cy="63" r="0" fill="url(#infraredGlow)"/>
+              <circle id="returnFlash" class="absorption-flash" cx="330" cy="266" r="0" fill="url(#infraredGlow)"/>
+            </svg>
+          </div>
+          <div class="scene-tabs" aria-label="選擇觀察的能量路徑">
+            <button type="button" data-view="all" aria-pressed="true">追蹤全程</button>
+            <button type="button" data-view="sun" aria-pressed="false">非紅外線的路徑</button>
+            <button type="button" data-view="ground" aria-pressed="false">地面與植物的紅外線</button>
+            <button type="button" data-view="glass" aria-pressed="false">玻璃再輻射</button>
+          </div>
+        </section>
+        <section class="panel chart-panel" aria-labelledby="chartTitle">
+          <div class="panel-head chart-head"><h2 id="chartTitle">溫室內溫度—時間圖</h2><div class="legend"><span style="--c:#267063">室內空氣 <b id="airScene">20.0°C</b></span></div></div>
+          <div class="chart-wrap"><canvas id="chart" role="img" aria-label="溫室內空氣溫度隨時間變化圖，橫軸為時間，縱軸為攝氏溫度。圖軸固定為 0 至 240 分鐘及 10 至 100°C。"></canvas></div>
+        </section>
+      </div>
+      <aside class="sidebar" aria-label="控制與能量收支">
+        <section class="panel controls" aria-labelledby="controlsTitle">
+          <div class="control-head"><h2 id="controlsTitle">改變日照，觀察熱流</h2><span class="time"><span id="timeValue">0</span><small style="font:11px sans-serif"> 分鐘</small></span></div>
+          <label class="slider-label" for="sunlight">非紅外線日照 <output id="sunlightValue">400 W/m²</output></label>
+          <input type="range" id="sunlight" min="0" max="600" step="20" value="400">
+          <p class="control-note">0：沒有日照　600：強日照 · 播放 1 秒＝4 分鐘</p>
+          <div class="control-row"><button type="button" id="play" class="primary">▶ 播放熱流</button><button type="button" id="advance">快進 10 分鐘</button></div>
+          <div class="control-row"><button type="button" id="sunToggle">停止日照</button><button type="button" id="reset">重設實驗</button></div>
+        </section>
+        <section class="panel balance" aria-labelledby="balanceTitle">
+          <div class="balance-head"><h2 id="balanceTitle">整個溫室的能量收支</h2><span class="small">W/m²</span></div>
+          <div class="balance-row"><span>吸收陽光</span><output class="value" id="solarValue">320.0</output></div><div class="bar"><i id="solarBar" style="--c:#d4a02a"></i></div>
+          <div class="balance-row"><span>散失到周圍</span><output class="value" id="lostValue">0.0</output></div><div class="bar"><i id="lostBar" style="--c:#cb573f"></i></div>
+          <div class="balance-row net-row"><span>淨吸收 <small id="balanceState">升溫中</small></span><output class="value" id="netValue">+320.0</output></div>
+        </section>
+        <section class="panel reflection" aria-labelledby="reflectionTitle">
+          <h2 id="reflectionTitle">用證據回答</h2>
+          <p id="observation">先保持日照，留意「散失到周圍」怎樣隨溫度改變。</p>
+          <p class="small" id="predictionRecord">你的預測尚未記錄。</p>
+          <button type="button" id="conclusion" disabled>觀察 10 分鐘後，作出解釋</button>
+        </section>
+      </aside>
+    </div>
+    <footer class="footer"><span id="pathNote">玻璃向內再輻射，讓部分能量回到地面，減少地面的淨輻射散熱。</span><span class="equation" id="balanceEquation">淨吸收＝吸收陽光−散失到周圍</span></footer>
+  </main>
+
+  <dialog id="predictionDialog" aria-labelledby="predictionTitle">
+    <span class="eyebrow">先預測，再觀察</span><h2 id="predictionTitle">玻璃會把能量永遠留住嗎？</h2>
+    <p>太陽的<strong>非紅外線（以可見光為例）</strong>容易穿過玻璃，但地面與植物發出的<strong>紅外線</strong>不容易直接穿過。</p>
+    <fieldset class="choices"><legend>你認為這代表甚麼？</legend>
+      <label class="choice"><input type="radio" name="prediction" value="trapped">能量會完全困在裡面，溫度一直上升。</label>
+      <label class="choice"><input type="radio" name="prediction" value="escape">能量仍可傳到周圍，溫度不會無限上升。</label>
+      <label class="choice"><input type="radio" name="prediction" value="unsure">還不確定，我想跟著能量的路徑觀察。</label>
+    </fieldset>
+    <div class="dialog-actions"><span class="small">先記下想法，稍後用熱流和曲線檢驗。</span><button id="begin" class="primary" type="button" disabled>記錄預測，播放動畫 →</button></div>
+  </dialog>
+  <dialog id="conclusionDialog" aria-labelledby="conclusionTitle">
+    <span class="eyebrow">觀察之後 · 解釋證據</span><h2 id="conclusionTitle">為甚麼保溫仍會散熱？</h2>
+    <p id="evidence"></p>
+    <fieldset class="choices"><legend>哪個解釋符合觀察？</legend>
+      <label class="choice"><input type="radio" name="explanation" value="reflect">玻璃把所有紅外線反射回去，完全沒有能量流出。</label>
+      <label class="choice"><input type="radio" name="explanation" value="emit">玻璃吸收紅外線後向內、向外再輻射，溫室仍向周圍散熱。</label>
+    </fieldset>
+    <p id="feedback" role="status">選擇解釋，再與能量收支比較。</p>
+    <div class="dialog-actions"><button id="backToExperiment" type="button">返回觀察</button><button id="checkExplanation" type="button" class="primary" disabled>檢查解釋</button></div>
+  </dialog>
+  <dialog id="modelDialog" aria-labelledby="modelTitle">
+    <span class="eyebrow">模型與讀數</span><h2 id="modelTitle">一個用來理解熱流的溫室</h2>
+    <ul class="model-copy">
+      <li>地面與植物共用一個等效溫度，另計玻璃及室內空氣溫度。所有功率以每平方米地面面積計算，數值屬教學示例。</li>
+      <li>黃色光線只示範太陽的非紅外線（以可見光為例）；真實陽光也含紅外線。紅色光線代表室內物件與玻璃發出的長波紅外線。</li>
+      <li>非紅外線設為 80% 透射、20% 反射，不在玻璃內吸收；長波紅外線吸收率／發射率設為 98%，其餘透射並忽略反射。這些是教學設定。</li>
+      <li>地面與植物的等效表面視為黑體，玻璃雙面均再輻射。溫度不等時有淨熱流；較冷玻璃向內輻射不表示淨熱量由冷處流向熱處。</li>
+      <li>光點輪流追蹤地面和植物的傳能示例，大小隨功率變化。吸收後另發出新的紅外線；地面、植物和玻璃同時持續輻射。光點不是單一光子，也不表示真實光速或光子數。</li>
+      <li>向內再輻射是內部交換，不另計作外來供能。被反射的陽光未被吸收，不再扣作溫室散熱。</li>
+      <li>「散失到周圍」合併所有對外淨散熱，已扣除環境送入的輻射。室外空氣與輻射環境固定 20°C；未模擬蒸發與濕度。</li>
+      <li>實際溫室也靠限制暖空氣流出而保溫。本活動聚焦玻璃的吸收與再輻射。</li>
+    </ul>
+    <p id="radiationEquation"></p>
+    <p class="small">參考：<a href="https://www.ces.fau.edu/nasa/module-2/how-greenhouse-effect-works.php" target="_blank" rel="noopener">佛羅里達大西洋大學：吸收與再輻射</a> · <a href="https://fieldreport.caes.uga.edu/publications/B792/greenhouses-heating-ventilation-and-cooling/" target="_blank" rel="noopener">喬治亞大學：溫室能量轉移</a></p>
+    <div class="dialog-actions"><span class="small">圖線固定顯示 0–240 分鐘、10–100°C。</span><button type="button" id="closeModel">返回溫室</button></div>
+  </dialog>
+  <script src="model.js"></script>
+  <script>
+    "use strict";
+    const $ = id => document.getElementById(id);
+    const model = GreenhouseModel;
+    let state = model.initial(), sunlight = 400, savedSunlight = 400, running = false, lastFrame = 0;
+    let history = [{ ...state }], view = "all", prediction = "", lastUi = 0;
+    const reducedMotion = matchMedia("(prefers-reduced-motion: reduce)");
+    const END = 240 * 60;
+    const ctx = $("chart").getContext("2d");
+    const packets = [
+      ["incoming", "incomingPath", "incident", "sun"], ["transmitted", "solarPath", "solar", "sun"],
+      ["reflected", "reflectionPath", "reflected", "sun"], ["surfaceIR", "groundPath", "groundIR", "ground"],
+      ["returned", "returnPath", "glassIR", "glass"], ["outside", "outsidePath", "glassIR", "glass"]
+    ].map(([stage, pathId, flow, layer]) => {
+      const element = document.createElementNS("http://www.w3.org/2000/svg", "g");
+      element.id = `${stage}Packet`; element.classList.add("light-packet");
+      const color = layer === "sun" ? "#e6a90c" : "#d9472b";
+      element.innerHTML = `<circle class="halo" r="20" fill="url(#${layer === "sun" ? "solarGlow" : "infraredGlow"})"/><circle class="tail" r="3" opacity=".5" fill="${color}"/><circle class="core" r="6" fill="${color}"/>`;
+      $("packetLayer").append(element);
+      return { stage, pathId, flow, layer, element, core:element.querySelector(".core"), halo:element.querySelector(".halo"), tail:element.querySelector(".tail") };
+    });
+    const notes = {
+      sun: "黃色：非紅外線（可見光示例）。在玻璃分成透射與反射兩路；真實陽光也含紅外線。",
+      ground: "地面與植物都持續發出紅外線；光點輪流示範兩者的傳能。",
+      glass: "玻璃吸收紅外線而獲得能量，並按自身溫度向內及向外再輻射。"
+    };
+    const predictions = { trapped:"能量完全被困，溫度一直上升", escape:"仍可散熱，不會無限升溫", unsure:"尚未確定，先看證據" };
+    const number = value => (Math.abs(value) < .05 ? 0 : value).toFixed(1);
+
+    function advance(seconds) {
+      let remaining = Math.min(seconds, END - state.time);
+      while (remaining > .000001) {
+        const toSample = 60 - (state.time % 60);
+        const dt = Math.min(remaining, toSample);
+        state = model.advance(state, sunlight, dt);
+        if (Math.abs(state.time / 60 - Math.round(state.time / 60)) < .000001) history.push({ ...state });
+        remaining -= dt;
+      }
+      if (state.time >= END - .000001) running = false;
+    }
+
+    function drawChart() {
+      const box = $("chart").getBoundingClientRect(), dpr = window.devicePixelRatio || 1;
+      if (!box.width || !box.height) return;
+      if ($("chart").width !== Math.round(box.width * dpr) || $("chart").height !== Math.round(box.height * dpr)) {
+        $("chart").width = Math.round(box.width * dpr); $("chart").height = Math.round(box.height * dpr);
+      }
+      ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+      const w = box.width, h = box.height, left = 39, top = 16, right = w - 18, bottom = h - 25;
+      const x = t => left + (right - left) * t / END;
+      const y = t => bottom - (bottom - top) * (t - 10) / 90;
+      ctx.clearRect(0, 0, w, h); ctx.font = '10px "Microsoft JhengHei",sans-serif';
+      ctx.lineWidth = 1; ctx.textAlign = "right";
+      for (const t of [20, 40, 60, 80, 100]) {
+        ctx.strokeStyle = "#e4eeeb"; ctx.beginPath(); ctx.moveTo(left, y(t)); ctx.lineTo(right, y(t)); ctx.stroke();
+        ctx.fillStyle = "#5e7770"; ctx.fillText(String(t), left - 7, y(t) + 3);
+      }
+      ctx.textAlign = "center";
+      for (const t of [0, 60, 120, 180, 240]) { ctx.fillText(String(t), x(t * 60), bottom + 15); }
+      ctx.textAlign = "left"; ctx.fillText("°C", 9, 10); ctx.textAlign = "right"; ctx.fillText("分鐘", right, h - 1);
+      const data = [...history, state];
+      ctx.strokeStyle = "#267063"; ctx.lineWidth = 2.7; ctx.beginPath();
+      data.forEach((point, i) => { if (i) ctx.lineTo(x(point.time), y(point.air)); else ctx.moveTo(x(point.time), y(point.air)); }); ctx.stroke();
+      ctx.fillStyle = "#267063"; ctx.beginPath(); ctx.arc(x(state.time), y(state.air), 3, 0, Math.PI * 2); ctx.fill();
+      $("chart").setAttribute("aria-label", `溫室內空氣溫度時間圖：${number(state.time / 60)} 分鐘，室內空氣 ${number(state.air)}°C。橫軸 0 至 240 分鐘，縱軸 10 至 100°C。`);
+    }
+
+    function render() {
+      const f = model.flows(state, sunlight);
+      $("sunlightValue").textContent = `${sunlight} W/m²`;
+      $("timeValue").textContent = Math.floor(state.time / 60);
+      $("solarValue").textContent = number(f.solar); $("lostValue").textContent = number(f.lost);
+      $("netValue").textContent = `${f.net > .05 ? "+" : ""}${number(f.net)}`;
+      $("solarBar").style.width = `${f.solar / 600 * 100}%`;
+      $("lostBar").style.width = `${Math.max(0, f.lost) / 600 * 100}%`;
+      const balance = Math.abs(f.net) < Math.max(1, f.solar * .01);
+      $("balanceState").textContent = balance ? (sunlight ? "接近平衡" : "接近室溫") : f.net > 0 ? "儲能中" : "放能中";
+      $("airScene").textContent = `${number(state.air)}°C`; $("glassScene").textContent = `玻璃 ${number(state.glass)}°C`;
+      $("emittedScene").textContent = `${Math.round(f.groundIR)} W/m²`;
+      $("returnedScene").textContent = `${Math.round(f.glassIR)} W/m²`;
+      $("absorbedScene").textContent = `${Math.round(f.absorbedIR)} W/m²`;
+      $("groundScene").textContent = `地面與植物 ${number(state.ground)}°C`;
+      $("solarScene").textContent = sunlight ? `吸收 ${number(f.solar)} W/m²` : "沒有日照供能";
+      $("reflectedScene").textContent = `${number(f.reflected)} W/m²`;
+      const trace = model.lightTrace(state.time, sunlight > 0);
+      for (const id of ["incomingPath", "solarPath", "solarPlantPath", "reflectionPath"]) $(id).style.visibility = sunlight ? "visible" : "hidden";
+      $("solarPath").style.opacity = $("groundPath").style.opacity = trace.source === "ground" ? ".16" : "0";
+      $("solarPlantPath").style.opacity = $("plantPath").style.opacity = trace.source === "plant" ? ".16" : "0";
+      for (const group of document.querySelectorAll(".flow-group")) {
+        group.style.opacity = (view === "all" || view === group.dataset.layer) ? "1" : ".18";
+      }
+      $("play").textContent = running ? "Ⅱ 暫停動畫" : state.time >= END ? "觀察已完成" : "▶ 播放熱流";
+      $("play").disabled = $("advance").disabled = state.time >= END;
+      $("sunToggle").textContent = sunlight ? "停止日照" : "恢復日照";
+      $("conclusion").disabled = state.time < 600;
+      $("conclusion").textContent = state.time < 600 ? "觀察 10 分鐘後，作出解釋" : "用目前證據，作出解釋";
+      $("observation").textContent = state.time >= END ? "已到 240 分鐘。比較最後的收支與溫度，或重設實驗再觀察。" :
+        sunlight === 0 && f.lost > 1 ? "沒有陽光供能，地面與植物仍發出紅外線。看看室內溫度會怎樣改變。" :
+        balance && sunlight > 0 ? "吸收陽光與散失到周圍已接近相等。溫度趨於穩定，能量仍持續流動。" :
+        "先保持日照，留意「散失到周圍」怎樣隨溫度改變。再試試停止日照。";
+      const source = trace.source === "plant" ? "植物" : "地面";
+      const traceNotes = {
+        sun:"太陽發出非紅外線光點。跟著它走到玻璃。",
+        split:`到達玻璃：一部分反射回外界，一部分透射，走向${source}。`,
+        surfaceAbsorption:`${source}吸收非紅外線，光點消失；接著發出新的紅外線。`,
+        surfaceEmission:`${source}發出紅外線。紅色光點從${source}走向玻璃。`,
+        glassAbsorption:"玻璃吸收紅外線，光點消失；接著由玻璃重新發出。",
+        glassEmission:"玻璃向內、向外再輻射，光點分別走向地面與周圍。",
+        returnAbsorption:"返回的紅外線被地面吸收。光點是傳能示例，物體同時持續輻射。"
+      };
+      $("pathNote").textContent = view === "all" ? traceNotes[trace.stage] : notes[view];
+      for (const packet of packets) {
+        const progress = trace[packet.stage];
+        packet.element.style.visibility = progress !== null && f[packet.flow] > .1 ? "visible" : "hidden";
+        if (progress === null) continue;
+        let pathId = packet.pathId;
+        if (trace.source === "plant" && packet.stage === "transmitted") pathId = "solarPlantPath";
+        if (trace.source === "plant" && packet.stage === "surfaceIR") pathId = "plantPath";
+        const path = $(pathId), distance = progress * path.getTotalLength();
+        const point = path.getPointAtLength(distance), tail = path.getPointAtLength(Math.max(0, distance - 13));
+        const radius = Math.max(3, Math.min(8, 6 * Math.sqrt(f[packet.flow] / 400)));
+        packet.element.setAttribute("transform", `translate(${point.x} ${point.y})`);
+        packet.element.style.opacity = view === "all" || view === packet.layer ? "1" : ".2";
+        packet.core.setAttribute("r", radius); packet.halo.setAttribute("r", radius * 3.5);
+        packet.tail.setAttribute("cx", tail.x - point.x); packet.tail.setAttribute("cy", tail.y - point.y);
+      }
+      $("surfaceFlash").setAttribute("cx", trace.source === "plant" ? 420 : 450);
+      $("surfaceFlash").setAttribute("cy", trace.source === "plant" ? 236 : 266);
+      for (const [id, strength] of [["surfaceFlash", trace.surfaceAbsorption], ["glassFlash", trace.glassAbsorption], ["returnFlash", trace.returnAbsorption]]) {
+        $(id).setAttribute("r", strength ? 12 + (1 - strength) * 23 : 0);
+        $(id).style.opacity = strength;
+      }
+      drawChart();
+    }
+
+    function pause() { running = false; render(); }
+    $("play").addEventListener("click", () => { running = !running; lastFrame = 0; render(); });
+    $("advance").addEventListener("click", () => { running = false; advance(600); render(); });
+    $("sunlight").addEventListener("input", event => { sunlight = Number(event.target.value); if (sunlight) savedSunlight = sunlight; render(); });
+    $("sunToggle").addEventListener("click", () => { if (sunlight) { savedSunlight = sunlight; sunlight = 0; } else sunlight = savedSunlight; $("sunlight").value = sunlight; render(); });
+    $("reset").addEventListener("click", () => {
+      state = model.initial(); history = [{ ...state }]; sunlight = savedSunlight = 400; running = false; lastFrame = 0;
+      $("sunlight").value = 400; view = "all";
+      document.querySelectorAll("[data-view]").forEach(button => button.setAttribute("aria-pressed", String(button.dataset.view === view)));
+      $("feedback").textContent = "選擇解釋，再與能量收支比較。";
+      document.querySelectorAll('input[name="explanation"]').forEach(input => { input.checked = false; });
+      $("checkExplanation").disabled = true; render();
+    });
+    document.querySelectorAll("[data-view]").forEach(button => button.addEventListener("click", () => {
+      view = button.dataset.view; document.querySelectorAll("[data-view]").forEach(item => item.setAttribute("aria-pressed", String(item === button))); render();
+    }));
+    document.querySelectorAll('input[name="prediction"]').forEach(input => input.addEventListener("change", () => { $("begin").disabled = false; }));
+    $("predictionDialog").addEventListener("cancel", event => event.preventDefault());
+    $("begin").addEventListener("click", () => {
+      prediction = document.querySelector('input[name="prediction"]:checked').value;
+      $("predictionRecord").textContent = `你的預測：${predictions[prediction]}。`;
+      $("predictionDialog").close(); running = true; lastFrame = 0; $("play").focus(); render();
+    });
+    $("modelButton").addEventListener("click", () => { pause(); $("modelDialog").showModal(); });
+    $("closeModel").addEventListener("click", () => $("modelDialog").close());
+    $("conclusion").addEventListener("click", () => {
+      pause(); const f = model.flows(state, sunlight);
+      $("evidence").textContent = `目前室內 ${number(state.air)}°C；吸收陽光 ${number(f.solar)} W/m²，散失到周圍 ${number(f.lost)} W/m²。你的原先預測是「${predictions[prediction]}」。`;
+      $("conclusionDialog").showModal();
+    });
+    document.querySelectorAll('input[name="explanation"]').forEach(input => input.addEventListener("change", () => { $("checkExplanation").disabled = false; $("feedback").textContent = "按「檢查解釋」與證據比較。"; }));
+    $("checkExplanation").addEventListener("click", () => {
+      const correct = document.querySelector('input[name="explanation"]:checked').value === "emit";
+      $("feedback").textContent = correct ? "符合觀察。向內再輻射讓地面接收部分能量；向周圍散熱仍然存在。日照固定時，供能與散熱趨向平衡，溫度便不再明顯上升。" : "再看看向外的箭嘴與「散失到周圍」讀數。玻璃會吸收並再輻射，能量並沒有完全留在室內。";
+    });
+    $("backToExperiment").addEventListener("click", () => $("conclusionDialog").close());
+    document.addEventListener("visibilitychange", () => { if (document.hidden) pause(); lastFrame = 0; });
+    window.addEventListener("resize", drawChart);
+    reducedMotion.addEventListener("change", render);
+    function frame(now) {
+      if (lastFrame && running) advance(Math.min(.1, (now - lastFrame) / 1000) * 240);
+      lastFrame = now;
+      if (running && now - lastUi > 50) { render(); lastUi = now; }
+      else if (!running && state.time >= END && !$("play").disabled) render();
+      requestAnimationFrame(frame);
+    }
+    window.addEventListener("DOMContentLoaded", () => {
+      if (window.katex) {
+        katex.render(String.raw`P_{\text{淨吸收}}=P_{\text{陽光}}-P_{\text{散失}}`, $("balanceEquation"), { throwOnError:false });
+        katex.render(String.raw`P=\varepsilon\sigma A T^4\qquad(T\text{ 以 K 計})`, $("radiationEquation"), { throwOnError:false });
+      }
+      render(); $("predictionDialog").showModal(); requestAnimationFrame(frame);
+    });
+  </script>
+</body>
+</html>

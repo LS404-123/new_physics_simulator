@@ -88,6 +88,22 @@
       href: "./HEAT/particle-ke-pe/index.html",
       image: "./HEAT/particle-ke-pe/preview.png",
       tags: ["粒子模型", "平均動能", "內部勢能", "速率", "物態", "固體", "液體", "氣體", "KE", "PE"]
+    },
+    {
+      title: "比熱容量實驗：誤差看得見",
+      description: "觀察水與金屬塊的實驗裝置，預測達到相同目標溫升所需的總供能，分清樣品吸能與電熱器供能。",
+      topic: "熱與氣體",
+      href: "./specific-heat-errors/index.html",
+      image: "./specific-heat-errors/preview.png",
+      tags: ["比熱容量", "實驗誤差", "預防措施", "焦耳計", "總供能", "溫升", "散熱", "攪拌"]
+    },
+    {
+      title: "溫室裡的熱往哪裡去？",
+      description: "跟著陽光與紅外線的路徑，觀察玻璃的吸收與再輻射，用能量收支解釋保溫為何仍會散熱。",
+      topic: "熱與氣體",
+      href: "./greenhouse-radiation/index.html",
+      image: "./greenhouse-radiation/preview.png",
+      tags: ["溫室", "玻璃", "紅外線", "吸收", "再輻射", "保溫", "散熱", "熱平衡", "greenhouse"]
     }
   ];
 
