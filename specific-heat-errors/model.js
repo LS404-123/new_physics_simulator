@@ -22,11 +22,11 @@
       ...sample, material, error, corrected, probe: corrected ? 'far' : probe,
       referenceEnergy: sample.mass * sample.c * TARGET_RISE,
       // ponytail: 教學用集中參數模型，只比較單一誤差；定量擬合真實器材時需量度熱容量及散熱係數。
-      apparatusC: apparatus ? (material === 'water' ? (corrected ? 15 : 150) : 45) : 0,
+      apparatusC: apparatus ? (material === 'water' ? (corrected ? 10 : 80) : 30) : 0,
       tare: material === 'water' ? (apparatus && !corrected ? 80 : 8) : 0,
-      efficiency: loss ? 0.8 : 1,
-      conductance: loss ? (material === 'water' ? 3 : 2) : 0,
-      tau: material === 'water' ? 35 : 18,
+      efficiency: loss ? 0.95 : 1,
+      conductance: loss ? 0.6 : 0,
+      tau: material === 'water' ? 15 : 8,
       settleTime: error === 'uneven' && corrected ? (material === 'water' ? 14 : 126) : 0
     };
   }

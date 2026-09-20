@@ -38,6 +38,9 @@ for (const material of ['water', 'metal']) {
         assert.ok(probe === 'near' ? state.mean - 20 < TARGET_RISE : state.mean - 20 > TARGET_RISE,
           '讀數達標不代表平均溫升達標');
       }
+      if (error !== 'ideal' && !corrected) {
+        assert.ok(Math.abs(r.cMeasured / reference - 1) <= 0.15, '示例誤差應保持在合理教學幅度');
+      }
       if (error === 'uneven' && corrected) {
         close(r.cMeasured, reference, reference * 0.001);
         assert.equal(r.capacityTrend, 'same');

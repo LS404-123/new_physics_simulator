@@ -1,0 +1,129 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="description" content="改變鋁塊或冷茶與熱檸檬的初溫及質量，觀察溫度—熱量圖由兩端相遇。">
+<title>熱容量與熱平衡</title>
+<script defer src="model.js"></script><script defer src="app.js"></script>
+<style>
+:root{--ink:#213545;--muted:#617383;--line:#d5e0e8;--paper:#edf3f7;--a:#2468ad;--b:#b64d29}
+*{box-sizing:border-box}[hidden]{display:none!important}
+html,body{width:100%;height:100%;margin:0;background:#dce6ed;color:var(--ink);font:14px "Microsoft JhengHei","Noto Sans TC",sans-serif}
+body{display:grid;place-items:center}
+button,input,select{font:inherit;touch-action:manipulation;-webkit-tap-highlight-color:transparent}
+select{min-height:44px;padding:8px 28px 8px 12px;border:1px solid var(--line);border-radius:8px;background:white;color:var(--ink)}
+button{min-height:44px;padding:8px 18px;border:1px solid var(--line);border-radius:8px;background:white;color:var(--ink);cursor:pointer;font-weight:700}
+button:hover{background:#e4edf1}:focus-visible{outline:3px solid #927219;outline-offset:3px}
+.app{width:1140px;height:768px;display:grid;grid-template-rows:62px 1fr;background:var(--paper)}
+.topbar{display:flex;align-items:center;gap:12px;padding:0 20px;border-bottom:1px solid var(--line)}
+.mark{display:flex;gap:4px;height:28px}.mark i{width:12px;border-radius:3px;background:var(--a)}.mark i+i{background:var(--b)}
+h1{font-size:23px;margin:0;letter-spacing:.025em}
+.topbar a{margin-left:auto;display:flex;align-items:center;min-height:44px;color:var(--muted);text-decoration:none;font-size:12px}
+.workspace{display:grid;grid-template-columns:352px minmax(0,1fr);gap:16px;padding:16px;min-height:0}
+.left{display:grid;grid-template-rows:310px minmax(0,1fr);gap:14px;min-height:0}
+.panel{background:white;border:1px solid var(--line);border-radius:12px;min-width:0;min-height:0}
+.scene{display:grid;grid-template-rows:34px 1fr;background:linear-gradient(180deg,#fbfdff,#e9f0f5)}
+.scene-head{display:flex;justify-content:space-between;align-items:center;padding:0 14px;color:var(--muted);font-size:11px}
+#status{color:#376f68}#scene{display:block;width:100%;height:100%}
+#scene text{font-family:"Microsoft JhengHei",sans-serif;fill:var(--ink)}
+#scene .temperature{font:600 24px Consolas,monospace}
+#scene .body-name{font-size:15px;font-weight:700}#scene .flow-label{font-size:13px;fill:#376f68}
+.controls{padding:12px 16px;display:flex;flex-direction:column;justify-content:space-between;gap:8px}
+fieldset{border:0;padding:0;margin:0;min-width:0}.control-head{display:flex;align-items:center;gap:14px;height:24px}
+h2{font-size:14px;margin:0}.a{color:var(--a)}.b{color:var(--b)}
+.capacity-track{flex:1;height:6px;background:#edf0f3;border-radius:3px}
+.capacity-track i{display:block;height:100%;background:var(--a);border-radius:3px}.b-control .capacity-track i{background:var(--b)}
+.control-row{display:grid;grid-template-columns:34px minmax(0,1fr) 61px;gap:9px;align-items:center;height:44px}
+.control-row label{font-size:12px;color:var(--muted)}
+input[type=range]{width:100%;height:44px;margin:0;cursor:pointer;accent-color:var(--a)}.b-control input{accent-color:var(--b)}
+output{text-align:right;font:13px Consolas,monospace;white-space:nowrap}
+.control-divider{height:1px;background:var(--line)}
+.actions{display:grid;grid-template-columns:1fr 90px;gap:10px}
+.primary{background:var(--ink);color:white;border-color:var(--ink)}.primary:hover{background:#36566d}
+.chart-panel{display:grid;grid-template-rows:48px 1fr}
+.chart-head{display:flex;align-items:center;gap:12px;padding:0 20px}
+.chart-head h2{font-size:18px}
+.speed-control{display:grid;grid-template-columns:auto minmax(64px,100px) 34px;gap:8px;align-items:center;margin-left:auto;font-size:12px;color:var(--muted)}
+.speed-control input{min-width:0;accent-color:var(--ink)}.speed-control output{font-size:12px}
+.legend{display:flex;gap:16px;font-size:12px}
+.legend span::before{content:"";display:inline-block;width:17px;height:3px;margin-right:6px;vertical-align:middle;background:currentColor}
+#chart{width:100%;height:100%;display:block;min-height:0}
+#chart text{font:12px "Microsoft JhengHei",sans-serif;fill:var(--muted)}
+#chart .axis-title{font-size:14px;fill:var(--ink)}
+#chart .trace{fill:none;stroke-width:4}#chart #equilibriumLabel{font-size:14px;fill:#376f68}
+#chart .temperature-guide{stroke-width:1.5;stroke-dasharray:7 6;opacity:.65}
+#chart #initialGuideLabelA{fill:var(--a)}#chart #initialGuideLabelB{fill:var(--b)}
+@media(prefers-reduced-motion:reduce){.flow-dot{display:none}}
+@media(max-width:1139px) and (orientation:landscape){
+.app{width:100vw;height:100svh;grid-template-rows:56px 1fr}
+.workspace{grid-template-columns:310px minmax(0,1fr);padding:10px;gap:12px}
+.left{grid-template-rows:minmax(200px,1fr) 320px;gap:10px}.controls{padding:10px 14px;gap:6px}}
+@media(orientation:portrait){
+.app{width:100vw;height:100svh}
+.workspace{grid-template-columns:1fr;grid-template-rows:310px minmax(0,1fr);padding:12px;gap:12px}
+.left{grid-template-columns:1fr 1fr;grid-template-rows:1fr;gap:12px}.controls{padding:10px 14px;gap:5px}}
+</style>
+</head>
+<body>
+<main class="app">
+<header class="topbar"><div class="mark" aria-hidden="true"><i></i><i></i></div><h1>熱容量與熱平衡</h1><select id="materialMode" aria-label="A、B 的物質"><option value="same">相同物質</option><option value="different">不同物質</option></select><a href="../index.html">目錄 ↗</a></header>
+<div class="workspace">
+<div class="left">
+<section class="panel scene" aria-label="兩個物體的熱傳遞動畫">
+<div class="scene-head"><span>絕熱系統</span><span id="status" role="status">未接觸</span></div>
+<svg id="scene" viewBox="0 0 360 280" role="img" aria-labelledby="sceneDescription">
+<title id="sceneDescription">兩個鋁塊的即時溫度與淨熱流方向</title>
+<defs><pattern id="hatch" width="8" height="8" patternUnits="userSpaceOnUse"><path d="M0 8L8 0" stroke="#c3d1db"/></pattern></defs>
+<text x="88" y="35" class="body-name" text-anchor="middle">A</text><text x="272" y="35" class="body-name" text-anchor="middle">B</text>
+<text id="temperatureA" x="88" y="69" class="temperature" text-anchor="middle">20.0 °C</text><text id="temperatureB" x="272" y="69" class="temperature" text-anchor="middle">80.0 °C</text>
+<text id="flowLabel" x="180" y="103" class="flow-label" text-anchor="middle"></text>
+<rect x="28" y="230" width="304" height="10" fill="url(#hatch)"/>
+<rect id="blockA" rx="6" stroke="#2468ad" stroke-width="2"/><rect id="blockB" rx="6" stroke="#b64d29" stroke-width="2"/>
+<g id="tea" hidden>
+<path d="M36-69H48C72-69 70-29 44-29" fill="none" stroke="#8ba5b5" stroke-width="8"/>
+<path d="M-48-79H48L39-14Q36 0 20 0H-20Q-36 0-39-14Z" fill="#eff7fa" stroke="#2468ad" stroke-width="2"/>
+<path d="M-42-60H42L35-15Q33-6 19-6H-19Q-33-6-35-15Z" fill="#b17b3c"/>
+<ellipse cx="0" cy="-60" rx="42" ry="8" fill="#cb9850"/>
+<path d="M-25-51L-21-23" fill="none" stroke="#f6dfb3" stroke-width="4" stroke-linecap="round"/>
+</g>
+<g id="lemon" hidden>
+<path d="M-50-45Q-47-62-39-60C-25-102 30-98 41-62Q57-56 49-40C35 8-20 12-39-25Q-55-28-50-45Z" fill="#f5d64e" stroke="#b79a27" stroke-width="2"/>
+<path d="M6-82Q13-109 36-105Q32-84 6-82Z" fill="#6a8a4c"/>
+<path d="M-27-60Q-13-79 7-75" fill="none" stroke="#fff2ab" stroke-width="6" stroke-linecap="round"/>
+<circle cx="22" cy="-31" r="2" fill="#d5b93c"/><circle cx="12" cy="-20" r="2" fill="#d5b93c"/><circle cx="28" cy="-45" r="2" fill="#d5b93c"/>
+</g>
+<text id="blockLabelA" y="216" text-anchor="middle" class="body-name">A</text><text id="blockLabelB" y="216" text-anchor="middle" class="body-name">B</text>
+<g id="flow" hidden><path id="flowLine" fill="none" stroke="#376f68" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/><circle id="flowDot" class="flow-dot" r="1.5" fill="white"/></g>
+</svg>
+</section>
+<section class="panel controls" aria-label="初溫及質量設定">
+<fieldset aria-labelledby="controlA"><div class="control-head"><h2 id="controlA" class="a">鋁塊 A</h2><div class="capacity-track" title="熱容量" aria-hidden="true"><i id="capacityBarA"></i></div></div>
+<div class="control-row"><label for="initialA">初溫</label><input id="initialA" aria-label="冷物體 A 初溫" type="range" min="0" max="100" step="5" value="20"><output for="initialA" id="initialAValue"></output></div>
+<div class="control-row"><label for="massA">質量</label><input id="massA" type="range" min="0.5" max="4" step="0.5" value="1"><output for="massA" id="massAValue"></output></div>
+</fieldset><div class="control-divider"></div>
+<fieldset class="b-control" aria-labelledby="controlB"><div class="control-head"><h2 id="controlB" class="b">鋁塊 B</h2><div class="capacity-track" title="熱容量" aria-hidden="true"><i id="capacityBarB"></i></div></div>
+<div class="control-row"><label for="initialB">初溫</label><input id="initialB" aria-label="熱物體 B 初溫" type="range" min="0" max="100" step="5" value="80"><output for="initialB" id="initialBValue"></output></div>
+<div class="control-row"><label for="massB">質量</label><input id="massB" type="range" min="0.5" max="4" step="0.5" value="2"><output for="massB" id="massBValue"></output></div>
+</fieldset>
+<div class="actions"><button id="play" class="primary">播放</button><button id="reset">重設</button></div>
+</section>
+</div>
+<section class="panel chart-panel" aria-labelledby="chartTitle">
+<div class="chart-head"><h2 id="chartTitle">溫度—熱量圖</h2><div class="speed-control"><label for="speed">速度</label><input id="speed" type="range" min="0.25" max="2" step="0.25" value="1" aria-label="模擬播放速度" aria-valuetext="1 倍速"><output id="speedValue" for="speed">1×</output></div><div class="legend"><span id="legendA" class="a">A</span><span id="legendB" class="b">B</span></div></div>
+<svg id="chart" viewBox="0 0 720 610" role="img" aria-labelledby="chartDescription">
+<title id="chartDescription">冷物體由左下升溫，熱物體由右上降溫，兩條溫度線在熱平衡時相遇</title><g id="grid"></g>
+<line id="initialGuideA" class="temperature-guide" x1="64" x2="670" stroke="#2468ad"/>
+<line id="initialGuideB" class="temperature-guide" x1="64" x2="670" stroke="#b64d29"/>
+<line id="equilibriumGuide" class="temperature-guide" x1="64" x2="670" stroke="#376f68" hidden/>
+<text id="initialGuideLabelA" x="128">A 初溫</text><text id="initialGuideLabelB" x="656" text-anchor="end">B 初溫</text>
+<path id="curveA" class="trace" stroke="#2468ad"/><path id="curveB" class="trace" stroke="#b64d29"/>
+<circle id="pointA" r="6" fill="#2468ad"/><circle id="pointB" r="6" fill="#b64d29"/>
+<circle id="meetingPoint" r="7" fill="#376f68" stroke="white" stroke-width="2" hidden/><text id="equilibriumLabel" hidden>熱平衡</text>
+</svg>
+</section>
+</div>
+</main>
+</body>
+</html>
+

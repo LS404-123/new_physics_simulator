@@ -91,7 +91,7 @@
     },
     {
       title: "比熱容量實驗：誤差看得見",
-      description: "觀察水與金屬塊的實驗裝置，預測達到相同目標溫升所需的總供能，分清樣品吸能與電熱器供能。",
+      description: "選擇水或金屬塊的實驗誤差，觀察裝置與比熱容量的偏差，再找出原因及預防措施。",
       topic: "熱與氣體",
       href: "./specific-heat-errors/index.html",
       image: "./specific-heat-errors/preview.png",
@@ -104,6 +104,14 @@
       href: "./greenhouse-radiation/index.html",
       image: "./greenhouse-radiation/preview.png",
       tags: ["溫室", "玻璃", "紅外線", "吸收", "再輻射", "保溫", "散熱", "熱平衡", "greenhouse"]
+    },
+    {
+      title: "熱容量與熱平衡",
+      description: "改變鋁塊或冷茶與熱檸檬的初溫及質量，看溫度—熱量圖由兩端相遇，理解熱容量如何決定平衡溫度。",
+      topic: "熱與氣體",
+      href: "./thermal-equilibrium/index.html",
+      image: "./thermal-equilibrium/preview.png",
+      tags: ["熱平衡", "熱容量", "比熱容量", "質量", "平衡溫度", "能量守恆", "熱流", "T–Q", "溫度熱量圖"]
     }
   ];
 
