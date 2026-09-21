@@ -1,0 +1,10 @@
+{
+  "name": "specific-heat-errors",
+  "private": true,
+  "scripts": {
+    "build": "node build.mjs",
+    "test": "node --test physics-check.js appearance-check.js 3d-check.mjs"
+  },
+  "dependencies": { "three": "0.185.1" },
+  "devDependencies": { "esbuild": "0.28.2" }
+}

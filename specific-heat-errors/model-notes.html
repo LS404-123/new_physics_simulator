@@ -2,6 +2,7 @@
 <html lang="zh-Hant"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>比熱容量實驗：相同溫升與總供能</title><link rel="stylesheet" href="../HEAT/thermometer-calibration-slope/katex/katex.min.css"><script defer src="../HEAT/thermometer-calibration-slope/katex/katex.min.js"></script><script defer src="../HEAT/thermometer-calibration-slope/katex/contrib/auto-render.min.js" onload="renderMathInElement(document.body)"></script><style>body{max-width:850px;margin:36px auto;padding:0 22px;font:16px/1.8 'Microsoft JhengHei',sans-serif;color:#153844;background:#f5f9f9}h1{font-size:26px}h2{font-size:19px;margin-top:28px}a{color:#007d7a}table{width:100%;border-collapse:collapse;background:white}td,th{padding:12px;border:1px solid #cbdadc;text-align:left}th{background:#e3f0ed}p{margin:12px 0}.formula{background:white;padding:12px}</style></head><body>
 <a href="index.html">← 返回模擬器</a><h1>相同溫升，為何需要不同總供能？</h1>
 <p>本活動根據提供的兩頁比熱容量實驗筆記，示範液體及金屬塊的電熱法、三項誤差與預防措施。焦耳計顯示累積總供能；比較欄只用同一比例的長條比較總供能和樣品實際吸能，不顯示能量實數，並比較比熱容量實驗值與真實值。轉碟示意供能的累積，不代表特定儀器的轉數校準；轉碟及攪拌動畫會隨實驗暫停。選擇想檢查的誤差後，直接開始加熱，觀察能量大小及比熱容量差距，再從裝置找出原因與預防措施。</p>
+<p>液體及金屬塊均用可旋轉、平移及縮放的三維模型。電熱器的發熱部分一直完全浸沒或插入；散熱情境只比較隔熱措施。液體展示杯及杯蓋、攪拌與熱流；金屬展示直棒電熱器、雙孔金屬塊、棉絮及聚苯乙烯墊。電源位於三維畫面外。模型只作實驗環境示意，不按幾何尺寸重新推算溫度圖表；原有計算及誤差比較不變。紅色表示傳入樣品，橙色表示向環境散熱，金色表示器材吸熱；箭嘴並非定量比例。杯、杯蓋、金屬塊及棉絮的前半採剖視，便於看見內部。部件標籤以引線連到三維位置，隨旋轉及縮放移動，並標明當前杯材質、杯蓋、棉絮、底墊及相關操作。</p>
 <p class="formula">\[c_{\mathrm{exp}}=\frac{Q}{m\Delta T},\qquad \Delta T=T_f-T_i\]</p>
 <p>焦耳計量度電熱器供應的總能量，不是只量水或金屬塊實際吸收的能量。溫度均勻時，相同樣品達到相同溫升，實際吸能相同；但散熱及器材吸熱令所需總供能增加。動畫的加熱時間會隨情境改變，不再固定。</p><table><thead><tr><th>誤差</th><th>同一目標溫升下的結果</th><th>初、末質量</th></tr></thead><tbody>
 <tr><td>能量散失到周圍</td><td>樣品實際吸能相同；需加熱更久，補償散失的能量。總供能較多，比熱容量實驗值偏大。</td><td rowspan="3">假設沒有蒸發、濺漏、附着或取走物質，並以相同方式稱量，初、末讀數相同。熱傳本身不會造成這個實驗中可量度的質量下降。</td></tr>
@@ -12,9 +13,10 @@
 <p>若實際末讀數較小，應檢查蒸發、攪拌濺出或移走器材時帶走水；保持杯蓋、輕輕攪拌並避免帶走水。這些是額外的質量流失機制，未加入本活動的三項誤差模型。質量在加熱中改變時，不能只憑末質量較小便斷定比熱容量偏大或偏小：還要知道流失時間、流失物質帶走的能量，以及計算採用哪個質量。</p>
 <h2>預防措施與局限</h2><p>水：發熱部分完全浸沒，使用聚苯乙烯杯並加蓋。杯的低熱容量減少器材吸熱；杯的隔熱性減少散熱，兩者原因不同。關掣後繼續輕輕攪拌，待水溫均勻後記錄最高穩定溫度。</p><p>金屬塊：發熱部分完全插入，包棉絮並墊聚苯乙烯墊。關掣後，遠端溫度計讀數可繼續上升，應等候並記錄最高溫度。隔熱不能消除電熱器本身吸熱，因此「金屬／器材吸熱」不提供能把此誤差消除的按鈕。</p>
 <details><summary>模型參數（教師參考）</summary><h2>背後的計算</h2><p>模型採水 0.200 kg、比熱容量 4200 J kg⁻¹ °C⁻¹；鋁塊 0.500 kg、比熱容量 900 J kg⁻¹ °C⁻¹。初溫與環境均為 20 °C，功率 60 W。目標溫升均為 10 °C；理想情況水加熱 140 s、鋁塊加熱 75 s，其餘情境由相同傳熱模型求出達到目標讀數所需的加熱時間。動畫及變化方向由同一狀態產生；焦耳計讀數來自模型的累積總供能，其他比較以變化方向表示。</p>
-<p>散熱情境用 95% 供能效率表示部分發熱部分外露，並以與溫差成正比的散熱率模擬未隔熱樣品。示例散熱係數為 0.6 W K⁻¹，使比熱容量實驗值約高 11%。預防措施比較把散熱理想化為可忽略，並不表示實際器材能完全隔熱。</p>
+<p>散熱情境的發熱部分與其他情境一樣完全放入樣品，不另計外露電熱器直接散熱。示例散熱係數為 0.6 W K⁻¹，樣品向周圍的散熱率與溫差成正比。預防措施比較把散熱理想化為可忽略，並不表示實際器材能完全隔熱。</p>
 <p>器材吸熱情境以共同溫度的額外熱容量計算：水的杯及電熱器合共 80 J K⁻¹；換低熱容量杯後為 10 J K⁻¹，仍有殘餘誤差；金屬情境的電熱器為 30 J K⁻¹。這些是教學用示例參數，並非對特定器材的實測值。</p>
 <p>溫度不均情境以兩個等熱容量區域表示，熱從近端傳向遠端。只模擬此項誤差時，不另加入散熱及器材吸熱。關掣後兩區在能量守恆下均溫；水攪拌加快均溫，金屬靠傳導。預防措施使用遠端探針，等待至兩區溫差可忽略後記錄最高穩定溫度。模型預先求出適當關掣時間，使均溫後末讀數達標；這是供能比較示範，不表示真實操作可以憑遠端讀數精確預知關掣時刻。實際需要調整加熱並等候讀數穩定。這是無散熱下的均溫平台；真實實驗還會逐漸冷卻。近端、遠端和平均溫度都是同一模型的結果，未模擬完整三維溫度場。</p>
 <p>能量守恆：\(Q=E_{\text{樣品}}+E_{\text{器材}}+E_{\text{散失}}\)。模型不含蒸發、濺漏、溫度計遲滯或天平受熱時的氣流／浮力誤差。這些因素需在真實操作中另行控制。</p>
 </details><h2>可重跑的計算檢查</h2><p><code>node specific-heat-errors/physics-check.js</code>：檢查所有情境的末讀數均達同一目標、總供能及樣品吸能方向、近遠端停熱、能量與質量守恆、預防措施及不同時間步長的一致性。</p>
+<p><code>node specific-heat-errors/3d-check.mjs</code>：檢查三維裝置在各情境及預防措施下的造型、讀數、熱流、暫停及減少動態效果。三維資產來源保存在 <code>specific-heat-errors</code>；在該資料夾執行 <code>npm ci</code> 安裝建置依賴，再執行 <code>npm run build</code> 重建 <code>apparatus-3d.js</code>。<code>npm test</code> 可執行物理、介面及三維裝置檢查；發佈時毋須載入外部 CDN。</p>
 </body></html>

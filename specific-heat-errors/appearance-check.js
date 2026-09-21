@@ -33,6 +33,7 @@ for (const reducedMotion of [false, true]) {
   element('play').listeners.click();
   run('frame(1000); frame(1100);');
   assert.equal(element('energy-reading').textContent, '00060');
+  assert.equal(element('heater').attrs.transform, 'translate(0,0)', '散熱情境不可抬高電熱器');
   const barWidth = id => Number.parseFloat(element(id).attrs.style.slice(6));
   assert.ok(barWidth('input-energy-bar') > 0 && barWidth('input-energy-bar') < 100, '總供能棒須由零逐步升至滿格');
   assert.ok(barWidth('sample-energy-bar') < barWidth('input-energy-bar'), '樣品吸能須以同一比例顯示為較短');
@@ -56,10 +57,10 @@ for (const reducedMotion of [false, true]) {
   assert.equal(elements.has('sample-energy-value'), false, '能量比較不應顯示實數');
   assert.equal(elements.has('energy-gap'), false, '不應顯示兩者差額行');
   assert.equal(element('input-energy-bar').attrs.style, 'width:100%');
-  assert.match(element('sample-energy-bar').attrs.style, /^width:89\./);
-  assert.equal(element('measured-capacity').textContent, '4671');
+  assert.match(element('sample-energy-bar').attrs.style, /^width:94\.9/);
+  assert.equal(element('measured-capacity').textContent, '4425');
   assert.equal(element('true-capacity').textContent, '4200');
-  assert.equal(element('capacity-gap').textContent, '實驗值高出 11.2%');
+  assert.equal(element('capacity-gap').textContent, '實驗值高出 5.4%');
 
   run("error = 'uneven'; reset(); M.advance(state, 10); render();");
   assert.ok('hidden' in element('stir-motion').attrs, '未處理的溫度不均情境不應顯示攪拌');

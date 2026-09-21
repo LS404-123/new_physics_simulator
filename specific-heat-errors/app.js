@@ -7,6 +7,9 @@ let state = M.create(material, error), running = false, previousFrame = 0, anima
 const reducedMotion = matchMedia('(prefers-reduced-motion: reduce)').matches;
 const text = (id, value) => { if ($(id).textContent !== value) $(id).textContent = value; };
 const visible = (id, show) => $(id).toggleAttribute('hidden', !show);
+let apparatus3d = null;
+try { apparatus3d = globalThis.SpecificHeat3D?.mount($('apparatus-3d')) || null; }
+catch (error) { console.warn('三維顯示未能啟用，使用原有裝置圖。', error); }
 
 function reset() {
   cancelAnimationFrame(animationFrame);
@@ -14,6 +17,7 @@ function reset() {
   state = M.create(material, error, corrected, 'far');
   $('timeline').max = state.config.duration + state.config.settleTime;
   render();
+  apparatus3d?.resetView();
 }
 
 function descriptions() {
@@ -23,8 +27,8 @@ function descriptions() {
     water ? '發熱部分完全浸沒；用隔熱杯，並使水溫均勻。' : '發熱段完全插入孔內；包棉絮、墊隔熱墊，並等候均溫。'
   ];
   if (error === 'loss') return [
-    corrected ? '發熱部分放好了，隔熱也加好了，所需總供能回到理想基準。此處忽略剩餘散熱。' : '部分能量散到周圍。要達到相同溫升，須加熱更久、供應更多能量；樣品實際吸能相同。',
-    water ? '把發熱部分完全浸沒在水中；使用聚苯乙烯杯並加蓋。' : '把直棒的發熱段完全插入孔內；用棉絮包裹金屬塊，並墊隔熱墊。'
+    corrected ? '加上隔熱措施後，所需總供能回到理想基準。此處忽略剩餘散熱。' : '部分能量散到周圍。要達到相同溫升，須加熱更久、供應更多能量；樣品實際吸能相同。',
+    water ? '電熱器保持完全浸沒；聚苯乙烯杯加蓋，減少向周圍散熱。' : '電熱器保持完全插入；用棉絮包裹金屬塊，並墊聚苯乙烯墊。'
   ];
   if (error === 'apparatus') return [
     corrected ? '換杯後，所需總供能減少，但仍略多於理想情況，比熱容量仍稍偏大。' : (water ? '水達到同樣溫升，實際吸能相同；杯和電熱器也吸熱，所以總供能較多。' : '金屬塊達到同樣溫升，實際吸能相同；電熱器也吸熱，所以總供能較多。'),
@@ -40,7 +44,7 @@ function draw(r) {
   const water = material === 'water', hasLoss = error === 'loss' && !corrected;
   const active = state.time > 0;
   const stirring = water && active && !r.done && (error !== 'uneven' || (corrected && !r.heating));
-  const lift = hasLoss ? 75 : 0;
+  const lift = 0;
   visible('water-vessel', water); visible('metal-vessel', !water);
   visible('water-heater', water); visible('metal-heater', !water);
   visible('metal-insulation', !water && !hasLoss);
@@ -76,8 +80,8 @@ function draw(r) {
   const uniform = state.spread < 0.01;
   text('temperature-status', !active ? '未升溫' : !uniform ? '遠端較冷' : '溫度均勻');
   text('probe-label', '溫度計固定在遠端');
-  text('setup-note', hasLoss ? (water ? '發熱部分未完全浸沒' : '發熱段未完全插入孔內') : error === 'uneven' ? (corrected && !r.heating ? (water ? '關掣後繼續攪拌' : '關掣後等候均溫') : '溫度計固定在遠端') : error === 'apparatus' ? (water ? (corrected ? '換上低熱容量的杯' : '杯和電熱器也會升溫') : '電熱器也會吸熱') : (water ? '發熱部分完全浸沒' : '發熱段完全在孔內'));
-  text('setup-detail', hasLoss ? '留意外露的發熱部分' : error === 'uneven' ? (corrected ? (water ? '攪拌使溫度均勻' : '等候熱傳至溫度計位置') : '遠端讀數低於平均溫度') : !water ? '直棒沿同一孔洞插入，底端留在孔內' : '杯身剖開，方便觀察內部');
+  text('setup-note', hasLoss ? '樣品向周圍散熱' : error === 'uneven' ? (corrected && !r.heating ? (water ? '關掣後繼續攪拌' : '關掣後等候均溫') : '溫度計固定在遠端') : error === 'apparatus' ? (water ? (corrected ? '換上低熱容量的杯' : '杯和電熱器也會升溫') : '電熱器也會吸熱') : (water ? '發熱部分完全浸沒' : '發熱段完全在孔內'));
+  text('setup-detail', hasLoss ? '電熱器位置不變，留意橙色散熱箭嘴' : error === 'uneven' ? (corrected ? (water ? '攪拌使溫度均勻' : '等候熱傳至溫度計位置') : '遠端讀數低於平均溫度') : !water ? '直棒沿同一孔洞插入，底端留在孔內' : '杯身剖開，方便觀察內部');
   text('diagram-desc', `電源以兩條電線接到焦耳計輸入端，另外兩條電線從輸出端接到電熱器。${$('setup-note').textContent}。焦耳計讀數 ${Math.round(state.input)} J，${supplyStatus}，${$('temperature-status').textContent}。${water ? $('stir-status').textContent + '。' : ''}顏色表示溫度，箭頭表示能量流向。`);
   // 位移只由實驗時間決定；暫停後熱流及攪拌一併停止。
   const phase = reducedMotion ? 0.5 : (state.time % 2) / 2;
@@ -90,6 +94,14 @@ function draw(r) {
   const discPhase = reducedMotion ? 0 : state.input / 1000 * Math.PI * 2;
   const discX = 253 + 24 * Math.cos(discPhase), discY = 303 + 4 * Math.sin(discPhase);
   $('meter-disc-mark').setAttribute('d', `M${discX} ${discY}v3`);
+  const show3d = Boolean(apparatus3d);
+  visible('water-3d', show3d);
+  visible('apparatus', !show3d);
+  visible('reset-view', show3d);
+  text('view-legend', show3d ? `紅：傳入${water ? '水' : '金屬'}　橙：散熱　金：器材吸熱　｜　單指旋轉・雙指平移／縮放` : '同一目標溫升，與理想情況比較');
+  if (show3d) {
+    apparatus3d.update(state, r, { power: M.POWER, room: M.ROOM, stirring, reducedMotion });
+  }
 }
 
 function render() {
@@ -132,6 +144,7 @@ document.querySelectorAll('[data-error]').forEach(button => button.addEventListe
 }));
 $('corrected').addEventListener('change', () => { corrected = $('corrected').checked; reset(); });
 $('reset').addEventListener('click', reset);
+$('reset-view').addEventListener('click', () => apparatus3d?.resetView());
 $('play').addEventListener('click', () => {
   cancelAnimationFrame(animationFrame);
   if (M.reading(state).done) reset();

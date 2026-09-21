@@ -7,6 +7,7 @@ for (const material of ['water', 'metal']) {
   for (const error of ['ideal', 'loss', 'apparatus', 'uneven']) {
     for (const corrected of [false, true]) for (const probe of ['near', 'far']) {
       const state = create(material, error, corrected, probe);
+      assert.equal(state.config.efficiency, 1, '發熱部分均完全放入樣品，不另計外露電熱器直接散熱');
       const stepped = create(material, error, corrected, probe);
       advance(state, 1000);
       for (let i = 0; i < 4000; i++) advance(stepped, 0.25);
