@@ -112,6 +112,14 @@
       href: "./thermal-equilibrium/index.html",
       image: "./thermal-equilibrium/preview.png",
       tags: ["熱平衡", "熱容量", "比熱容量", "質量", "平衡溫度", "能量守恆", "熱流", "T–Q", "溫度熱量圖"]
+    },
+    {
+      title: "水的溫度與密度",
+      description: "放大燒杯中的一小部分，調整 20–80°C 水溫，以 10 倍膨脹幅度觀察粒子向四周散開，以及固定範圍內的粒子數變化。",
+      topic: "熱與氣體",
+      href: "./water-density/index.html",
+      image: "./water-density/preview.png",
+      tags: ["密度", "水", "溫度", "熱膨脹", "粒子", "固定體積", "density"]
     }
   ];
 

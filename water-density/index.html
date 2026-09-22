@@ -1,0 +1,143 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>水的溫度與密度</title>
+<style>
+:root{--paper:#f6fafb;--ink:#203f50;--water:#247b9d;--sample:#ad5d20;--line:#c9dce3}
+*{box-sizing:border-box}html,body{margin:0;width:100%;height:100%;background:#e7eff3;color:var(--ink)}
+body{display:grid;place-items:center;font-family:"Segoe UI","Microsoft JhengHei",sans-serif}
+.app{width:1140px;height:768px;background:var(--paper);display:grid;grid-template-rows:minmax(0,1fr) 114px;position:relative}
+.scene{width:100%;height:100%;display:block;min-height:0}
+.scene text{font-family:"Bahnschrift","Segoe UI",sans-serif;font-variant-numeric:tabular-nums}
+.toolbar{position:absolute;right:30px;top:24px;display:flex;gap:10px}
+button,a{width:48px;height:48px;display:grid;place-items:center;border:1px solid var(--line);border-radius:50%;background:var(--paper);color:var(--ink);cursor:pointer;touch-action:manipulation}
+button:hover,a:hover{background:#e5f0f4}button svg,a svg{width:22px;height:22px;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
+:focus-visible{outline:3px solid var(--sample);outline-offset:5px}
+.controls{display:flex;align-items:center;justify-content:center;gap:25px;padding:10px 38px 28px}
+.thermal-icon{width:28px;height:34px;fill:none;stroke:currentColor;stroke-width:1.7;stroke-linecap:round;stroke-linejoin:round;flex:none}
+.cold{color:#247b9d}.hot{color:#b65838}
+.slider-wrap{width:470px;position:relative;padding-bottom:19px}
+input[type=range]{display:block;width:100%;height:48px;margin:0;cursor:pointer;appearance:none;background:transparent;touch-action:pan-y}
+input[type=range]::-webkit-slider-runnable-track{height:7px;border-radius:8px;background:linear-gradient(90deg,#75b2ce,#b9c9c9,#d49679)}
+input[type=range]::-webkit-slider-thumb{appearance:none;width:28px;height:28px;margin-top:-10.5px;border:5px solid white;border-radius:50%;background:var(--ink);box-shadow:0 0 0 1px #9db5c1,0 2px 6px #29485425}
+input[type=range]::-moz-range-track{height:7px;border-radius:8px;background:linear-gradient(90deg,#75b2ce,#b9c9c9,#d49679)}
+input[type=range]::-moz-range-thumb{width:18px;height:18px;border:5px solid white;border-radius:50%;background:var(--ink);box-shadow:0 0 0 1px #9db5c1}
+.endpoints{display:flex;justify-content:space-between;position:absolute;bottom:0;left:0;right:0;font:14px Consolas,monospace;color:#536d7a}
+output{min-width:156px;font:44px "Bahnschrift","Segoe UI",sans-serif;font-variant-numeric:tabular-nums;white-space:nowrap}
+output span{font-size:24px;color:#536d7a;margin-left:6px}
+@media(max-width:1139px),(max-height:767px){.app{width:100vw;height:100svh}.controls{gap:16px;padding-inline:24px}.slider-wrap{width:min(470px,48vw)}}
+@media(orientation:portrait){.app{grid-template-rows:minmax(0,1fr) 160px}.scene{align-self:center}.controls{flex-wrap:wrap;gap:14px;padding:8px 22px 24px}.slider-wrap{width:calc(100% - 100px)}output{width:100%;text-align:center;font-size:36px}.toolbar{right:18px;top:18px}}
+</style>
+</head>
+<body>
+<main class="app" aria-label="改變水溫，觀察固定範圍內的示意粒子數">
+  <nav class="toolbar" aria-label="工具">
+    <button id="reset" type="button" aria-label="重設至 20°C"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 9a8 8 0 1 1 .7 8M4 3v6h6"/></svg></button>
+    <a href="../index.html" aria-label="返回模擬器目錄"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="4" y="4" width="6" height="6" rx="1"/><rect x="14" y="4" width="6" height="6" rx="1"/><rect x="4" y="14" width="6" height="6" rx="1"/><rect x="14" y="14" width="6" height="6" rx="1"/></svg></a>
+  </nav>
+  <svg class="scene" viewBox="0 0 1140 654" role="img" aria-labelledby="sceneTitle sceneDescription">
+    <title id="sceneTitle">放大燒杯內一小部分，點算固定範圍內的粒子</title>
+    <desc id="sceneDescription"></desc>
+    <defs>
+      <linearGradient id="waterFill" x2="0" y2="1"><stop stop-color="#d9eef5"/><stop offset="1" stop-color="#c4e3ed"/></linearGradient>
+    </defs>
+    <svg id="overview" x="35" y="163" width="280" height="280" viewBox="180 90 650 555" aria-hidden="true">
+      <ellipse cx="490" cy="619" rx="313" ry="12" fill="#cddfe5" opacity=".42"/>
+      <path d="M211 129V594Q211 610 227 610H753Q769 610 769 594V137L799 116H749" fill="#edf5f8" stroke="#7297a8" stroke-width="5" stroke-linejoin="round"/>
+      <path d="M197 116H230" stroke="#7297a8" stroke-width="5" stroke-linecap="round"/>
+      <rect x="218" y="252" width="544" height="350" fill="url(#waterFill)"/>
+      <path d="M218 252H762" fill="none" stroke="#3688a5" stroke-width="4"/>
+      <rect id="sampleLocation" fill="#ad5d2022" stroke="#ad5d20" stroke-width="4"/>
+    </svg>
+    <path d="M188 335L354 190M188 361L354 536" fill="none" stroke="#b7cbd4" stroke-width="1.4" stroke-dasharray="4 6"/>
+    <text id="magnification" x="174" y="477" text-anchor="middle" fill="#536d7a" font-size="20"></text>
+    <rect x="352" y="102" width="676" height="522" rx="18" fill="#d9eaf0" stroke="#c3d9e2" stroke-width="1.5"/>
+    <svg id="detail" x="360" y="110" width="660" height="506" viewBox="432 426 120 92" overflow="hidden">
+      <rect x="432" y="426" width="120" height="92" fill="url(#waterFill)"/>
+      <g id="particles" aria-hidden="true"></g>
+      <rect id="sampleBox" fill="none" stroke="#ad5d20" stroke-width=".4" stroke-dasharray="1.2 1"/>
+    </svg>
+    <path d="M690 539V580" fill="none" stroke="#ad5d20" stroke-width="1.5"/>
+    <rect x="633" y="580" width="276" height="63" rx="14" fill="#f6fafb"/>
+    <g transform="translate(653 612)" fill="#ad5d20" aria-hidden="true">
+      <circle cx="-6" cy="-7" r="3.5"/><circle cx="7" cy="-7" r="3.5"/><circle cx="-6" cy="6" r="3.5"/><circle cx="7" cy="6" r="3.5"/>
+    </g>
+    <text id="count" x="679" y="628" fill="#914b18" font-size="46" font-weight="500"></text>
+    <path d="M748 597V630" stroke="#c9dce3"/>
+    <text id="densityLabel" x="769" y="621" fill="#203f50" font-size="24" font-weight="600"></text>
+  </svg>
+  <div class="controls">
+    <svg class="thermal-icon cold" viewBox="0 0 30 34" aria-hidden="true"><path d="M15 3V31M3 10L27 24M3 24L27 10M11 6L15 10L19 6M11 28L15 24L19 28M4 15L9 14L8 9M22 25L21 20L26 19M4 19L9 20L8 25M22 9L21 14L26 15"/></svg>
+    <div class="slider-wrap"><input id="temperature" type="range" min="20" max="80" step="1" value="20" aria-label="水溫（攝氏度）" aria-valuetext="20°C"><div class="endpoints" aria-hidden="true"><span>20</span><span>80</span></div></div>
+    <svg class="thermal-icon hot" viewBox="0 0 30 34" aria-hidden="true"><path d="M17 3C20 12 10 13 13 19C16 18 19 14 20 11C30 22 24 31 15 31C4 31 1 22 7 15C6 22 10 22 10 19C8 12 16 10 17 3Z"/></svg>
+    <output id="temperatureOut" for="temperature" aria-label="目前水溫">20<span>°C</span></output>
+  </div>
+</main>
+<script src="../HEAT/heat-transfer-conduction-convection/model.js"></script>
+<script src="model.js"></script>
+<script>
+"use strict";
+const $ = id => document.getElementById(id);
+const reducedMotion = matchMedia("(prefers-reduced-motion: reduce)");
+const state = { temperature: 20, target: 20, frame: 0, last: 0 };
+const ns = "http://www.w3.org/2000/svg";
+const dots = Array.from({ length: WaterDensityModel.total }, () => {
+  const dot = document.createElementNS(ns, "circle");
+  dot.setAttribute("r", "3.25");
+  $("particles").append(dot);
+  return dot;
+});
+for (const id of ["sampleBox", "sampleLocation"]) {
+  for (const [key, value] of Object.entries(WaterDensityModel.sample)) $(id).setAttribute(key, value);
+}
+$("magnification").textContent = `×${WaterDensityModel.magnification}`;
+
+function render() {
+  const snapshot = WaterDensityModel.at(state.temperature);
+  snapshot.particles.forEach((particle, i) => {
+    dots[i].setAttribute("cx", particle.x);
+    dots[i].setAttribute("cy", particle.y);
+    dots[i].setAttribute("fill", particle.selected ? "#ad5d20" : "#438aa5");
+    dots[i].setAttribute("opacity", particle.selected ? ".95" : ".62");
+  });
+  $("count").textContent = snapshot.count;
+  $("densityLabel").textContent = `密度：${snapshot.densityLevel}`;
+  $("sceneDescription").textContent = `${state.temperature.toFixed(1)}°C；虛線框內有 ${snapshot.count} 個示意粒子。相對 20–80°C 範圍的密度中點，密度${snapshot.densityLevel}。粒子向四周散開，框的體積及粒子大小保持不變；熱膨脹幅度放大 ${WaterDensityModel.magnification} 倍，忽略杯壁約束。小燒杯只標示取樣位置。`;
+  $("temperatureOut").firstChild.nodeValue = Number(state.temperature.toFixed(1));
+}
+
+function tick(now) {
+  const dt = Math.max(0, Math.min((now - state.last) / 1000, .05));
+  state.last = now;
+  const difference = state.target - state.temperature;
+  state.temperature += Math.sign(difference) * Math.min(Math.abs(difference), dt * 45);
+  render();
+  state.frame = state.temperature === state.target ? 0 : requestAnimationFrame(tick);
+}
+
+$("temperature").addEventListener("input", event => {
+  state.target = Number(event.target.value);
+  event.target.setAttribute("aria-valuetext", `${state.target}°C`);
+  if (reducedMotion.matches) {
+    cancelAnimationFrame(state.frame);
+    state.frame = 0;
+    state.temperature = state.target;
+    render();
+  } else if (!state.frame) {
+    state.last = performance.now();
+    state.frame = requestAnimationFrame(tick);
+  }
+});
+$("reset").addEventListener("click", () => {
+  cancelAnimationFrame(state.frame);
+  Object.assign(state, { temperature: 20, target: 20, frame: 0 });
+  $("temperature").value = 20;
+  $("temperature").setAttribute("aria-valuetext", "20°C");
+  render();
+});
+render();
+</script>
+</body>
+</html>
