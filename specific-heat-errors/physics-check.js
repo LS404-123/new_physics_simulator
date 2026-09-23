@@ -14,6 +14,8 @@ for (const material of ['water', 'metal']) {
       close(state.mean, stepped.mean);
       close(state.spread, stepped.spread);
       close(state.input, state.sampleEnergy + state.apparatusEnergy + state.lost);
+      close(state.apparatusEnergy, state.heaterEnergy + state.cupEnergy);
+      close(state.input, state.sampleEnergy + state.heaterEnergy + state.cupEnergy + state.lost);
       const r = reading(state);
       close(r.rise, TARGET_RISE);
       assert.equal(r.riseTrend, 'same');
@@ -58,6 +60,9 @@ const foam = advance(create('water', 'apparatus', true), 1000);
 assert.ok(reading(foam).cMeasured < reading(glass).cMeasured);
 assert.ok(foam.input < glass.input);
 close(foam.sampleEnergy, glass.sampleEnergy);
+close(foam.heaterEnergy, glass.heaterEnergy);
+close(foam.cupEnergy, 0);
+assert.ok(glass.cupEnergy > 0);
 assert.equal(reading(glass).initialBalance, 280);
 assert.equal(reading(foam).initialBalance, 208);
 assert.throws(() => create('ice'), RangeError);

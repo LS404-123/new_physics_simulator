@@ -1,10 +1,10 @@
 <!doctype html>
 <html lang="zh-Hant"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>比熱容量實驗：相同溫升與總供能</title><link rel="stylesheet" href="../HEAT/thermometer-calibration-slope/katex/katex.min.css"><script defer src="../HEAT/thermometer-calibration-slope/katex/katex.min.js"></script><script defer src="../HEAT/thermometer-calibration-slope/katex/contrib/auto-render.min.js" onload="renderMathInElement(document.body)"></script><style>body{max-width:850px;margin:36px auto;padding:0 22px;font:16px/1.8 'Microsoft JhengHei',sans-serif;color:#153844;background:#f5f9f9}h1{font-size:26px}h2{font-size:19px;margin-top:28px}a{color:#007d7a}table{width:100%;border-collapse:collapse;background:white}td,th{padding:12px;border:1px solid #cbdadc;text-align:left}th{background:#e3f0ed}p{margin:12px 0}.formula{background:white;padding:12px}</style></head><body>
 <a href="index.html">← 返回模擬器</a><h1>相同溫升，為何需要不同總供能？</h1>
-<p>本活動根據提供的兩頁比熱容量實驗筆記，示範液體及金屬塊的電熱法、三項誤差與預防措施。焦耳計顯示累積總供能；比較欄只用同一比例的長條比較總供能和樣品實際吸能，不顯示能量實數，並比較比熱容量實驗值與真實值。轉碟示意供能的累積，不代表特定儀器的轉數校準；轉碟及攪拌動畫會隨實驗暫停。選擇想檢查的誤差後，直接開始加熱，觀察能量大小及比熱容量差距，再從裝置找出原因與預防措施。</p>
+<p>本活動根據提供的兩頁比熱容量實驗筆記，示範液體及金屬塊的電熱法、三項誤差與預防措施。焦耳計顯示累積總供能；桑基圖顯示能量經電熱器後分到樣品、電熱器本身、杯和周圍環境，並比較比熱容量實驗值與真實值。散熱支線為方便辨認而略放大，最多佔總線寬一成；圖中能量數值仍按模型計算，並四捨五入至整數焦耳。轉碟示意供能的累積，不代表特定儀器的轉數校準；轉碟及攪拌動畫會隨實驗暫停。選擇想檢查的誤差後，直接開始加熱，觀察能量大小及比熱容量差距，再從裝置找出原因與預防措施。</p>
 <p>液體及金屬塊均用可旋轉、平移及縮放的三維模型。電熱器的發熱部分一直完全浸沒或插入；散熱情境只比較隔熱措施。液體展示杯及杯蓋、攪拌與熱流；金屬展示直棒電熱器、雙孔金屬塊、棉絮及聚苯乙烯墊。電源位於三維畫面外。模型只作實驗環境示意，不按幾何尺寸重新推算溫度圖表；原有計算及誤差比較不變。紅色表示傳入樣品，橙色表示向環境散熱，金色表示器材吸熱；箭嘴並非定量比例。杯、杯蓋、金屬塊及棉絮的前半採剖視，便於看見內部。部件標籤以引線連到三維位置，隨旋轉及縮放移動，並標明當前杯材質、杯蓋、棉絮、底墊及相關操作。</p>
 <p class="formula">\[c_{\mathrm{exp}}=\frac{Q}{m\Delta T},\qquad \Delta T=T_f-T_i\]</p>
-<p>焦耳計量度電熱器供應的總能量，不是只量水或金屬塊實際吸收的能量。溫度均勻時，相同樣品達到相同溫升，實際吸能相同；但散熱及器材吸熱令所需總供能增加。動畫的加熱時間會隨情境改變，不再固定。</p><table><thead><tr><th>誤差</th><th>同一目標溫升下的結果</th><th>初、末質量</th></tr></thead><tbody>
+<p>焦耳計量度送到電熱器的總能量，不是只量水或金屬塊實際吸收的能量。溫度均勻時，相同樣品達到相同溫升，實際吸能相同；但散熱及器材吸熱令所需總供能增加。器材吸熱情境在水模式假設電熱器熱容量為 10 J K⁻¹、厚杯為 70 J K⁻¹；換杯後只保留電熱器吸熱。鋁塊模式假設電熱器熱容量為 30 J K⁻¹。其他情境以理想器材為基準，不另計器材吸熱。動畫的加熱時間會隨情境改變。</p><table><thead><tr><th>誤差</th><th>同一目標溫升下的結果</th><th>初、末質量</th></tr></thead><tbody>
 <tr><td>能量散失到周圍</td><td>樣品實際吸能相同；需加熱更久，補償散失的能量。總供能較多，比熱容量實驗值偏大。</td><td rowspan="3">假設沒有蒸發、濺漏、附着或取走物質，並以相同方式稱量，初、末讀數相同。熱傳本身不會造成這個實驗中可量度的質量下降。</td></tr>
 <tr><td>杯及電熱器吸收能量</td><td>樣品實際吸能相同；額外供能用於器材升溫。總供能較多，若全當作樣品吸熱，比熱容量實驗值偏大。</td></tr>
 <tr><td>樣品溫度不均</td><td>以局部溫度計讀數達標為停熱條件：遠端較冷，要供能較多才達標，平均溫升已過高，實驗值偏大；近端較熱，較早達標便停熱，供能較少，平均溫升仍不足，實驗值偏小。</td></tr></tbody></table>

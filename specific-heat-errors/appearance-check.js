@@ -34,9 +34,11 @@ for (const reducedMotion of [false, true]) {
   run('frame(1000); frame(1100);');
   assert.equal(element('energy-reading').textContent, '00060');
   assert.equal(element('heater').attrs.transform, 'translate(0,0)', '散熱情境不可抬高電熱器');
-  const barWidth = id => Number.parseFloat(element(id).attrs.style.slice(6));
-  assert.ok(barWidth('input-energy-bar') > 0 && barWidth('input-energy-bar') < 100, '總供能棒須由零逐步升至滿格');
-  assert.ok(barWidth('sample-energy-bar') < barWidth('input-energy-bar'), '樣品吸能須以同一比例顯示為較短');
+  assert.equal(element('sankey-input').textContent, '焦耳計 60 J');
+  assert.ok(Number(element('sankey-trunk').attrs.height) > 0, '供能後桑基圖應出現主流');
+  assert.ok(element('sankey-sample').attrs.d, '樣品吸能應有支流');
+  assert.ok(element('sankey-loss').attrs.d, '散熱應有支流');
+  assert.equal(element('sankey-heater').attrs.d, '', '散熱情境不應虛構電熱器本身吸能');
   assert.equal('hidden' in element('stir-motion').attrs, false, '水加熱時應顯示攪拌');
   assert.equal(position() === atRest, reducedMotion, '減少動態效果時保留靜態攪拌提示');
   assert.match(position(), /^translate\(0,[-\d.]+\)$/, '攪拌棒只可上下移動，不可旋轉或左右移動');
@@ -53,14 +55,26 @@ for (const reducedMotion of [false, true]) {
   assert.equal(position(), atRest);
   assert.equal(element('energy-reading').textContent, '00000');
   run('M.advance(state, 1000); render();');
-  assert.equal(elements.has('input-energy-value'), false, '能量比較不應顯示實數');
-  assert.equal(elements.has('sample-energy-value'), false, '能量比較不應顯示實數');
-  assert.equal(elements.has('energy-gap'), false, '不應顯示兩者差額行');
-  assert.equal(element('input-energy-bar').attrs.style, 'width:100%');
-  assert.match(element('sample-energy-bar').attrs.style, /^width:94\.9/);
+  assert.match(element('sankey-sample-label').textContent, /^水吸能 8400 J$/);
+  assert.match(element('sankey-loss-label').textContent, /^散熱 [1-9]\d* J$/);
+  const branchWidth = id => {
+    const [, upper, lower] = element(id).attrs.d.match(/290 ([-\d.]+)V([-\d.]+)/);
+    return Number(lower) - Number(upper);
+  };
+  const trunkWidth = Number(element('sankey-trunk').attrs.height);
+  const lossWidth = branchWidth('sankey-loss');
+  assert.equal('hidden' in element('sankey-note').attrs, false, '有散熱時才須解釋線寬放大');
+  assert.ok(lossWidth > run('state.lost * 52 / 10000'), '散熱支線應略大於實際線寬');
+  assert.ok(lossWidth <= trunkWidth * 0.1 + 1e-8, '散熱支線仍須保持少於或等於一成');
+  assert.ok(lossWidth < branchWidth('sankey-sample'), '散熱支線應明顯比樣品支線細');
+  assert.ok(Math.abs(branchWidth('sankey-sample') + lossWidth - trunkWidth) < 1e-8, '支線總寬須等於主流');
   assert.equal(element('measured-capacity').textContent, '4425');
   assert.equal(element('true-capacity').textContent, '4200');
   assert.equal(element('capacity-gap').textContent, '實驗值高出 5.4%');
+  run("error = 'apparatus'; reset(); M.advance(state, 1000); render();");
+  assert.ok('hidden' in element('sankey-note').attrs, '沒有散熱時不應顯示放大提示');
+  assert.ok(element('sankey-heater').attrs.d && element('sankey-cup').attrs.d, '水的器材吸能要分開電熱器與杯');
+  assert.match(element('sankey-heater-label').textContent, /^電熱器吸能 [1-9]\d* J$/);
 
   run("error = 'uneven'; reset(); M.advance(state, 10); render();");
   assert.ok('hidden' in element('stir-motion').attrs, '未處理的溫度不均情境不應顯示攪拌');
@@ -74,5 +88,6 @@ for (const reducedMotion of [false, true]) {
   assert.ok('hidden' in element('stir-motion').attrs, '完成後停止攪拌');
   run("material = 'metal'; reset(); M.advance(state, 10); render();");
   assert.ok('hidden' in element('water-stirrer').attrs, '金屬塊不應顯示攪拌棒或標示');
+  assert.ok('hidden' in element('sankey-cup-label').attrs, '金屬塊不應顯示杯吸能');
 }
-console.log('通過：焦耳計讀數及轉碟、加熱攪拌、暫停與重設、關掣後均溫、金屬模式及減少動態效果。');
+console.log('通過：桑基圖能量分流、焦耳計讀數及轉碟、加熱攪拌、暫停與重設、金屬模式及減少動態效果。');

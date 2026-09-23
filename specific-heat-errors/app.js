@@ -117,10 +117,32 @@ function render() {
   $('timeline').value = state.time;
   $('timeline').setAttribute('aria-valuetext', stage);
   const trueCapacity = M.MATERIALS[material].c;
-  const energyScale = M.POWER * state.config.duration;
-  $('input-energy-bar').setAttribute('style', `width:${Math.min(100, state.input / energyScale * 100)}%`);
-  $('sample-energy-bar').setAttribute('style', `width:${Math.min(100, state.sampleEnergy / energyScale * 100)}%`);
-  text('sample-energy-label', material === 'water' ? '水實際吸能' : '金屬塊實際吸能');
+  const scale = 52 / Math.max(10000, state.input);
+  const width = state.input * scale;
+  $('sankey-trunk').setAttribute('y', 68 - width / 2);
+  $('sankey-trunk').setAttribute('height', width);
+  text('sankey-input', `焦耳計 ${Math.round(state.input)} J`);
+  const flows = [
+    ['sample', state.sampleEnergy, 30, material === 'water' ? '水吸能' : '鋁塊吸能'],
+    ['heater', state.heaterEnergy, 62, '電熱器吸能'],
+    ['cup', state.cupEnergy, 94, '杯吸能'],
+    ['loss', state.lost, 126, '散熱']
+  ];
+  const trueLossWidth = state.lost > 1e-7 ? state.lost * scale : 0;
+  const visualLossWidth = state.lost > 1e-7 ? Math.min(width * 0.1, Math.max(4, trueLossWidth)) : 0;
+  const lossBoost = visualLossWidth - trueLossWidth;
+  let top = 68 - width / 2;
+  for (const [name, energy, target, label] of flows) {
+    const thickness = name === 'loss' ? visualLossWidth : name === 'sample'
+      ? Math.max(0, energy * scale - lossBoost) : Math.max(0, energy) * scale;
+    const bottom = top + thickness;
+    $('sankey-' + name).setAttribute('d', thickness < 1e-6 ? '' : `M150 ${top}C205 ${top} 235 ${target-thickness/2} 290 ${target-thickness/2}V${target+thickness/2}C235 ${target+thickness/2} 205 ${bottom} 150 ${bottom}Z`);
+    text('sankey-' + name + '-label', `${label} ${Math.round(energy)} J`);
+    top = bottom;
+  }
+  visible('sankey-note', state.lost > 1e-7);
+  visible('sankey-cup-label', material === 'water');
+  text('sankey-desc', `焦耳計供能 ${Math.round(state.input)} J，經電熱器後，樣品吸能 ${Math.round(state.sampleEnergy)} J，電熱器本身吸能 ${Math.round(state.heaterEnergy)} J，${material === 'water' ? `杯吸能 ${Math.round(state.cupEnergy)} J，` : ''}散熱 ${Math.round(state.lost)} J。${state.lost > 1e-7 ? '散熱支線略放大，最多佔主流線寬一成；數值按模型。' : '線寬按能量比例。'}`);
   text('true-capacity', String(trueCapacity));
   text('measured-capacity', r.done ? String(Math.round(r.cMeasured)) : '—');
   const capacityError = r.done ? (r.cMeasured - trueCapacity) / trueCapacity * 100 : null;

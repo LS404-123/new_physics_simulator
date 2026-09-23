@@ -18,11 +18,13 @@
     const sample = MATERIALS[material];
     const loss = error === 'loss' && !corrected;
     const apparatus = error === 'apparatus';
+    const heaterC = apparatus ? (material === 'water' ? 10 : 30) : 0;
+    const cupC = apparatus && material === 'water' && !corrected ? 70 : 0;
     return {
       ...sample, material, error, corrected, probe: corrected ? 'far' : probe,
       referenceEnergy: sample.mass * sample.c * TARGET_RISE,
       // ponytail: 教學用集中參數模型，只比較單一誤差；定量擬合真實器材時需量度熱容量及散熱係數。
-      apparatusC: apparatus ? (material === 'water' ? (corrected ? 10 : 80) : 30) : 0,
+      heaterC, cupC, apparatusC: heaterC + cupC,
       tare: material === 'water' ? (apparatus && !corrected ? 80 : 8) : 0,
       efficiency: 1,
       conductance: loss ? 0.6 : 0,
@@ -34,7 +36,7 @@
   function create(material = 'water', error = 'loss', corrected = false, probe = 'far') {
     const config = settings(material, error, corrected, probe);
     const initial = () => ({ config, time: 0, mean: ROOM, spread: 0,
-      input: 0, lost: 0, sampleEnergy: 0, apparatusEnergy: 0, mass: config.mass });
+      input: 0, lost: 0, sampleEnergy: 0, heaterEnergy: 0, cupEnergy: 0, apparatusEnergy: 0, mass: config.mass });
     // 用同一傳熱模型求達到目標讀數的加熱時間；均溫情境以關掣後的末讀數為準。
     let low = 0, high = 2 * config.referenceEnergy / POWER;
     for (let i = 0; i < 45; i++) {
@@ -74,6 +76,8 @@
       remaining -= dt;
     }
     state.sampleEnergy = c.mass * c.c * (state.mean - ROOM);
+    state.heaterEnergy = c.heaterC * (state.mean - ROOM);
+    state.cupEnergy = c.cupC * (state.mean - ROOM);
     state.apparatusEnergy = c.apparatusC * (state.mean - ROOM);
     return state;
   }
