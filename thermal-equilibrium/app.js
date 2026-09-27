@@ -4,7 +4,7 @@
   const $ = id => document.getElementById(id);
   const fields = ['initialA', 'massA', 'initialB', 'massB'];
   const defaults = Object.fromEntries(fields.map(id => [id, $(id).value]));
-  const state = { config: null, time: 0, started: false, running: false, previous: null };
+  const state = { config: null, time: 0, started: false, running: false, previous: null, showEnergy: false };
   let frame = 0;
   let axisMinimum = 0;
   const x = (side, fraction) => side === 'A' ? 64 + 303 * fraction : 670 - 303 * fraction;
@@ -21,6 +21,7 @@
     $('initialA').value = ice ? Math.min(0, initialA) : Math.max(0, initialA);
     axisMinimum = Math.min(0, Number($('initialA').value));
     $('scenarioRow').hidden = !ice;
+    $('toggleEnergy').toggleAttribute('hidden', !ice);
     state.config = create({ ...Object.fromEntries(fields.map(id => [id, Number($(id).value)])),
       ice, specificA: ice ? WATER_SPECIFIC : different ? TEA_SPECIFIC : ALUMINIUM_SPECIFIC,
       specificB: ice ? WATER_SPECIFIC : different ? LEMON_SPECIFIC : ALUMINIUM_SPECIFIC });
@@ -48,8 +49,8 @@
     $('iceInLiquid').toggleAttribute('hidden', !ice);
     $('flowLabel').setAttribute('y', ice ? 250 : 103);
     const waterColor = $('materialMode').value === 'ice-water';
-    $('tea').querySelector('path[fill="#b17b3c"]').style.fill = waterColor ? '#9dd4ed' : '#b17b3c';
-    $('tea').querySelector('ellipse').style.fill = waterColor ? '#b5e5f8' : '#cb9850';
+    $('liquidBody').style.fill = waterColor ? '#9dd4ed' : '#b17b3c';
+    $('liquidSurface').style.fill = waterColor ? '#b5e5f8' : '#cb9850';
     let grid = '<text class="axis-title" x="24" y="28">溫度 / °C</text>' +
       '<path d="M64 65V530H670" fill="none" stroke="#9cacb8"/>' +
       '<text x="64" y="559">吸熱 →</text><text x="670" y="559" text-anchor="end">← 放熱</text>' +
@@ -74,8 +75,21 @@
     const totalIce = sample.remainingIce + sample.frozenMass;
     const equilibriumX = 367, equilibriumY = y(config.equilibrium);
     const fraction = config.equilibriumEnergy === 0 ? 1 : state.started ? sample.transferFraction : 0;
+    $('energySummary').toggleAttribute('hidden', !config.ice || !state.showEnergy || !done);
+    // 由初始條件計算到 0°C 的能量，不使用本輪實際傳熱量；兩條共用比例尺。
+    const energyScale = Math.max(config.warmingEnergy + config.meltingEnergy, config.coolingEnergy, 1);
     for (const side of ['A', 'B']) {
       const temperature = sample['temperature' + side];
+      const sensible = side === 'A' ? config.warmingEnergy : config.coolingEnergy;
+      const latent = side === 'A' ? config.meltingEnergy : 0;
+      const total = sensible + latent;
+      const liquid = $('materialMode').value === 'ice-tea' ? '茶' : '水';
+      $('energyName' + side).textContent = side === 'A' ? '冰升至 0°C 並全溶所需' : liquid + '降至 0°C 可放出';
+      $('energyTotal' + side).textContent = (total / 1000).toFixed(2) + ' kJ';
+      $('energySensible' + side).style.width = (100 * sensible / energyScale) + '%';
+      $('energyLatent' + side).style.width = (100 * latent / energyScale) + '%';
+      $('energyRow' + side).setAttribute('aria-label', $('energyName' + side).textContent + ' ' + $('energyTotal' + side).textContent +
+        (side === 'A' ? '；升至 0°C ' + (sensible / 1000).toFixed(2) + ' kJ；全部融化 ' + (latent / 1000).toFixed(2) + ' kJ' : ''));
       $('temperature' + side).textContent = temperature.toFixed(1) + ' °C';
       const width = 72 * Math.cbrt(config['mass' + side]);
       const height = 67 * Math.cbrt(config['mass' + side]);
@@ -89,11 +103,13 @@
       const start = 'M' + x(side, 0) + ',' + y(config['initial' + side]);
       let kink = '';
       let plateau = '';
+      let changing = false;
       if (config.ice && config.equilibriumEnergy > 0) {
         const breaks = side === 'A' ? [config.warmingEnergy, config.warmingEnergy + config.meltingEnergy] :
           [config.coolingEnergy, config.coolingEnergy + config.massB * FUSION_LATENT];
         const phaseStart = breaks[0] / config.equilibriumEnergy;
         const phaseEnd = Math.min(fraction, breaks[1] / config.equilibriumEnergy);
+        changing = fraction > 0 && fraction < 1 && fraction >= phaseStart && fraction < breaks[1] / config.equilibriumEnergy;
         if (phaseEnd > phaseStart) {
           plateau = 'M' + x(side, phaseStart) + ',' + y(0) + 'L' + x(side, phaseEnd) + ',' + y(0);
         }
@@ -107,13 +123,31 @@
       }
       $('curve' + side).setAttribute('d', config.equilibriumEnergy === 0 ? '' : start + kink + 'L' + x(side, fraction) + ',' + y(temperature));
       $('phaseCurve' + side).setAttribute('d', plateau);
+      const color = done ? '#376f68' : changing ? '#7c3aed' : side === 'A' ? '#2468ad' : '#b64d29';
+      $('point' + side).setAttribute('fill', color);
+      $('temperature' + side).style.fill = color;
       $('point' + side).setAttribute('cx', x(side, fraction));
       $('point' + side).setAttribute('cy', y(temperature));
       for (const key of ['y1', 'y2']) $('initialGuide' + side).setAttribute(key, y(config['initial' + side]));
       $('initialGuideLabel' + side).setAttribute('y', y(config['initial' + side]) + (side === 'A' ? 18 : -10));
     }
+    $('equilibriumTemperatures').toggleAttribute('hidden', !done);
+    const meltVisible = config.ice && state.started && !done && sample.meltedMass > 1e-10 && sample.temperatureB - sample.temperatureA > 1e-6;
+    $('meltWater').toggleAttribute('hidden', !meltVisible);
     if (config.ice) {
       $('tea').setAttribute('transform', 'translate(180 230) scale(1.5)');
+      // 融水量控制色區大小，溫差控制對比；只示意溫度區域，不模擬流場。
+      const meltProgress = sample.meltedMass / config.massA;
+      const liquidMass = sample.meltedMass + config.massB - sample.frozenMass;
+      const radius = 60 * Math.sqrt(sample.meltedMass / Math.max(liquidMass, 1e-10));
+      for (const [key, value] of Object.entries({ cx: -12 * meltProgress, cy: -54 + 25 * meltProgress, rx: radius, ry: radius })) {
+        $('meltWaterCloud').setAttribute(key, value);
+      }
+      $('meltWater').setAttribute('opacity', Math.min(1, Math.max(0, sample.temperatureB - sample.temperatureA) / 20));
+      if ($('materialMode').value === 'ice-water') {
+        $('liquidBody').style.fill = temperatureColor(sample.temperatureB);
+        $('liquidSurface').style.fill = temperatureColor(sample.temperatureB);
+      }
       $('iceSolid').toggleAttribute('hidden', totalIce < 1e-10);
       const scale = Math.min(1.1, .9 * Math.cbrt(totalIce));
       const drop = sample.contactFraction * sample.contactFraction;
@@ -136,17 +170,20 @@
     $('equilibriumLabel').textContent = '熱平衡 ' + config.equilibrium.toFixed(1) + ' °C';
     $('chartDescription').textContent = 'A 從左向右吸熱，B 從右向左放熱降溫。已轉移 ' + transferredKJ.toFixed(2) + ' kJ；A 為 ' + sample.temperatureA.toFixed(1) + ' °C，B 為 ' + sample.temperatureB.toFixed(1) + ' °C。' + (config.ice ? $('phaseLabel').textContent + '。' : '') + (done ? '熱平衡溫度為 ' + config.equilibrium.toFixed(1) + ' °C。' : '');
     const flowVisible = state.started && !contacting && !done && config.equilibriumEnergy > 0;
-    $('flow').toggleAttribute('hidden', !flowVisible || (config.ice && totalIce < 1e-10));
+    $('flow').toggleAttribute('hidden', !flowVisible);
     const direction = Math.sign(config.difference);
     let flowPath = direction > 0 ? 'M135 184H225M221 180L225 184L221 188' : 'M225 184H135M139 180L135 184L139 188';
     if (config.ice) {
       const scale = Math.min(1.1, .9 * Math.cbrt(totalIce));
-      const endX = 180 + 27 * scale + 2, endY = 149 + 12 * scale;
-      flowPath = 'M225 196Q230 172 ' + endX + ' ' + endY +
-        'M' + (endX + 2) + ' ' + (endY + 8) + 'L' + endX + ' ' + endY + 'L' + (endX + 8) + ' ' + endY;
+      const hasIce = totalIce > 1e-10;
+      const endX = hasIce ? 180 + 27 * scale + 2 : 160, endY = hasIce ? 149 + 12 * scale : 196;
+      const controlY = hasIce ? 172 : 196;
+      flowPath = 'M225 196Q230 ' + controlY + ' ' + endX + ' ' + endY + (hasIce ?
+        'M' + (endX + 2) + ' ' + (endY + 8) + 'L' + endX + ' ' + endY + 'L' + (endX + 8) + ' ' + endY :
+        'M168 190L160 196L168 202');
       const pulse = (sample.transferFraction * 12) % 1, rest = 1 - pulse;
       $('flowDot').setAttribute('cx', rest * rest * 225 + 2 * rest * pulse * 230 + pulse * pulse * endX);
-      $('flowDot').setAttribute('cy', rest * rest * 196 + 2 * rest * pulse * 172 + pulse * pulse * endY);
+      $('flowDot').setAttribute('cy', rest * rest * 196 + 2 * rest * pulse * controlY + pulse * pulse * endY);
     } else {
       $('flowDot').setAttribute('cx', 180 + direction * (-39 + ((state.time - CONTACT_SECONDS) / 2 % 1) * 78));
       $('flowDot').setAttribute('cy', 184);
@@ -159,7 +196,8 @@
     const liquidName = $('materialMode').value === 'ice-tea' ? '茶' : '水';
     $('flowLabel').textContent = !state.started || contacting ? '' : done ? '沒有淨熱流' : config.ice ?
       liquidName + '放熱 → ' + (totalIce > 1e-10 ? '冰吸熱' : '融水吸熱') : direction > 0 ? 'A → B' : 'B → A';
-    $('sceneDescription').textContent = (config.ice ? '冰放入同一杯液體，杯內冰量跟隨融化或凝固改變。' : '') + 'A 為 ' + sample.temperatureA.toFixed(1) + ' °C，B 為 ' + sample.temperatureB.toFixed(1) + ' °C。' + ($('flowLabel').textContent ? $('flowLabel').textContent + '。' : '');
+    $('sceneDescription').textContent = (config.ice ? '冰放入同一杯液體，杯內冰量跟隨融化或凝固改變。' : '') +
+      (meltVisible ? '柔邊藍色色區代表較冷的融水 A。' : '') + 'A 為 ' + sample.temperatureA.toFixed(1) + ' °C，B 為 ' + sample.temperatureB.toFixed(1) + ' °C。' + ($('flowLabel').textContent ? $('flowLabel').textContent + '。' : '');
     $('status').textContent = !state.started ? config.ice ? '準備放入冰' : '未接觸' : done ? '熱平衡' : !state.running ? '已暫停' : contacting ? config.ice ? '放入冰中' : '靠近中' : '傳熱中';
     $('play').textContent = done ? '重播' : state.running ? '暫停' : state.started ? '繼續' : '播放';
   }
@@ -182,6 +220,11 @@
     cancelAnimationFrame(frame);
     render();
     if (state.running) frame = requestAnimationFrame(tick);
+  });
+  $('toggleEnergy').addEventListener('click', () => {
+    state.showEnergy = !state.showEnergy;
+    $('toggleEnergy').setAttribute('aria-pressed', String(state.showEnergy));
+    render();
   });
   fields.forEach(id => $(id).addEventListener('input', () => {
     $('scenario').value = 'free';

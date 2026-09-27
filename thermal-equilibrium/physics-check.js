@@ -149,30 +149,122 @@ const { runInNewContext } = require('node:vm');
 const appSource = readFileSync(require.resolve('./app.js'), 'utf8');
 function graphAt(config, time) {
   const elements = new Map();
+  let tick;
   const element = id => {
     if (!elements.has(id)) elements.set(id, { value: '', min: 0, max: 4, style: {}, attributes: {}, handlers: {},
       setAttribute(key, value) { this.attributes[key] = String(value); },
-      toggleAttribute() {}, addEventListener(event, handler) { this.handlers[event] = handler; },
+      toggleAttribute(key, on) { if (on) this.attributes[key] = ''; else delete this.attributes[key]; },
+      addEventListener(event, handler) { this.handlers[event] = handler; },
       querySelector() { return element('liquidFill'); } });
     return elements.get(id);
   };
   for (const id of ['initialA', 'initialB', 'massA', 'massB']) element(id).value = String(config[id]);
   element('materialMode').value = config.ice ? 'ice-water' : 'same';
+  element('speed').value = '1';
   element('zeroAxis').attributes.stroke = 'black';
   runInNewContext(appSource, { ThermalEquilibrium: { ...require('./model.js'), create: () => config, at: () => at(config, time) },
-    document: { getElementById: element, addEventListener() {} }, cancelAnimationFrame() {}, requestAnimationFrame() {} });
+    document: { getElementById: element, addEventListener() {} }, cancelAnimationFrame() {}, requestAnimationFrame(callback) { tick = callback; } });
   element('play').handlers.click();
+  if (time >= config.duration) {
+    tick(0);
+    for (let now = 100; now <= Math.ceil((config.duration + .1) * 1000); now += 100) tick(now);
+  }
   assert.equal(element('zeroAxis').attributes.stroke, 'black');
-  return id => element(id).attributes.d;
+  const read = (id, key = 'd') => key === 'text' ? element(id).textContent : element(id).style[key] ?? element(id).attributes[key];
+  read.click = id => element(id).handlers.click();
+  return read;
 }
 assert.equal(graphAt(warm, CONTACT_SECONDS + .01)('phaseCurveA'), '');
 let graph = graphAt(warm, CONTACT_SECONDS + PLAYBACK_SECONDS * 25000 / warm.equilibriumEnergy);
 assert.equal(graph('phaseCurveA'), `M${64 + 303 * 17640 / warm.equilibriumEnergy},452.5L${64 + 303 * 25000 / warm.equilibriumEnergy},452.5`);
 assert.equal(graph('phaseCurveB'), '');
+assert.equal(graph('pointA', 'fill'), '#7c3aed');
+assert.equal(graph('temperatureA', 'fill'), '#7c3aed');
+assert.equal(graph('pointB', 'fill'), '#b64d29');
+assert.equal(graph('equilibriumTemperatures', 'hidden'), '');
 graph = graphAt(warm, warm.duration);
 assert.equal(graph('phaseCurveA'), `M${64 + 303 * 17640 / warm.equilibriumEnergy},452.5L${64 + 303 * 157920 / warm.equilibriumEnergy},452.5`);
+assert.equal(graph('equilibriumTemperatures', 'hidden'), undefined);
+assert.equal(graph('temperatureA', 'fill'), '#376f68');
+assert.equal(graph('temperatureB', 'fill'), '#376f68');
+assert.equal(graph('flow', 'hidden'), '');
 graph = graphAt(freeze, CONTACT_SECONDS + PLAYBACK_SECONDS * 20000 / freeze.equilibriumEnergy);
 assert.equal(graph('phaseCurveA'), '');
 assert.equal(graph('phaseCurveB'), `M${670 - 303 * 8400 / freeze.equilibriumEnergy},452.5L${670 - 303 * 20000 / freeze.equilibriumEnergy},452.5`);
+assert.equal(graph('pointB', 'fill'), '#7c3aed');
+assert.equal(graph('temperatureB', 'fill'), '#7c3aed');
+graph = graphAt(warm, CONTACT_SECONDS + PLAYBACK_SECONDS * 170000 / warm.equilibriumEnergy);
+assert.equal(graph('iceSolid', 'hidden'), '');
+assert.equal(graph('flow', 'hidden'), undefined);
+assert.match(graph('flowLine'), /L160 196/);
+assert.equal(graph('pointA', 'fill'), '#2468ad');
+graph = graphAt(cold, cold.duration);
+assert.equal(graph('iceSolid', 'hidden'), undefined);
+assert.equal(graph('flow', 'hidden'), '');
+assert.equal(graph('equilibriumTemperatures', 'hidden'), undefined);
 assert.equal(graphAt(create(base), 10)('phaseCurveA'), '');
+// 預設隱藏，只在開啟顯示且播放完成時出現；重播及重設收起結果。
+assert.equal(graph('energySummary', 'hidden'), '');
+graph.click('toggleEnergy');
+assert.equal(graph('toggleEnergy', 'aria-pressed'), 'true');
+assert.equal(graph('energySummary', 'hidden'), undefined);
+assert.equal(graph('energyTotalA', 'text'), '376.00 kJ');
+assert.equal(graph('energyTotalB', 'text'), '84.00 kJ');
+close(parseFloat(graph('energySensibleA', 'width')), 100 * 42 / 376);
+close(parseFloat(graph('energyLatentA', 'width')), 100 * 334 / 376);
+close(parseFloat(graph('energySensibleB', 'width')), 100 * 84 / 376);
+graph.click('toggleEnergy');
+assert.equal(graph('energySummary', 'hidden'), '');
+graph.click('toggleEnergy');
+graph.click('play');
+assert.equal(graph('energySummary', 'hidden'), '');
+graph.click('reset');
+assert.equal(graph('energySummary', 'hidden'), '');
+graph = graphAt(partialFreeze, partialFreeze.duration);
+close(parseFloat(graph('energySensibleB', 'width')), 100 * 16.8 / 376);
+assert.equal(graph('energyLatentB', 'width'), '0%');
+assert.equal(graph('energyTotalB', 'text'), '16.80 kJ');
+graph = graphAt(warm, warm.duration);
+assert.equal(graph('energyTotalA', 'text'), '157.92 kJ');
+assert.equal(graph('energyTotalB', 'text'), '252.00 kJ');
+close(parseFloat(graph('energyLatentA', 'width')), 100 * 140280 / 252000);
+assert.equal(graph('energySensibleB', 'width'), '100%');
+// 臨界情況兩條等長；未播放完成的計算亦只依初始條件。
+graph = graphAt(critical, critical.duration);
+assert.equal(graph('energyTotalA', 'text'), '157.92 kJ');
+assert.equal(graph('energyTotalB', 'text'), '157.92 kJ');
+close(parseFloat(graph('energySensibleA', 'width')) + parseFloat(graph('energyLatentA', 'width')), 100);
+close(parseFloat(graph('energySensibleB', 'width')), 100);
+graph = graphAt(warm, CONTACT_SECONDS + 1);
+assert.equal(graph('energyTotalA', 'text'), '157.92 kJ');
+assert.equal(graph('energyTotalB', 'text'), '252.00 kJ');
+graph = graphAt(create({ ...iceBase, initialB: 0 }), CONTACT_SECONDS);
+assert.equal(graph('energyTotalA', 'text'), '140.28 kJ');
+assert.equal(graph('energyTotalB', 'text'), '0.00 kJ');
+assert.equal(graph('energySensibleA', 'width'), '0%');
+assert.equal(graph('energyLatentA', 'width'), '100%');
+assert.equal(graph('energyLatentB', 'width'), '0%');
+graph = graphAt(create(base), 100);
+assert.equal(graph('toggleEnergy', 'hidden'), '');
+graph.click('toggleEnergy');
+assert.equal(graph('energySummary', 'hidden'), '');
+// 融水色區由實際融水量與溫差驅動；冰全溶後保留，同溫後淡出。
+graph = graphAt(warm, CONTACT_SECONDS + PLAYBACK_SECONDS * 10000 / warm.equilibriumEnergy);
+assert.equal(graph('meltWater', 'hidden'), '');
+const quarterMelt = graphAt(warm, CONTACT_SECONDS + PLAYBACK_SECONDS * (warm.warmingEnergy + warm.meltingEnergy / 4) / warm.equilibriumEnergy);
+const halfMelt = graphAt(warm, CONTACT_SECONDS + PLAYBACK_SECONDS * (warm.warmingEnergy + warm.meltingEnergy / 2) / warm.equilibriumEnergy);
+assert.equal(quarterMelt('meltWater', 'hidden'), undefined);
+assert.ok(Number(halfMelt('meltWaterCloud', 'rx')) > Number(quarterMelt('meltWaterCloud', 'rx')));
+graph = graphAt(warm, CONTACT_SECONDS + PLAYBACK_SECONDS * 170000 / warm.equilibriumEnergy);
+assert.equal(graph('iceSolid', 'hidden'), '');
+assert.equal(graph('meltWater', 'hidden'), undefined);
+assert.equal(graph('flow', 'hidden'), undefined);
+const nearlyDone = graphAt(warm, warm.duration - .01);
+assert.ok(Number(nearlyDone('meltWater', 'opacity')) < Number(graph('meltWater', 'opacity')));
+graph.click('reset');
+assert.equal(graph('meltWater', 'hidden'), '');
+assert.equal(graphAt(warm, warm.duration)('meltWater', 'hidden'), '');
+assert.equal(graphAt(cold, cold.duration)('meltWater', 'hidden'), '');
+assert.equal(graphAt(partialFreeze, CONTACT_SECONDS + 10)('meltWater', 'hidden'), '');
+assert.equal(graphAt(create(base), 10)('meltWater', 'hidden'), '');
 console.log('通過：零下冰升溫、0°C 融冰平台、臨界全溶、融水升溫、液體結冰、低於 0°C 的平衡、質量與能量守恆及原有模式。');

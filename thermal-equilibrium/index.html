@@ -42,6 +42,14 @@ output{text-align:right;font:13px Consolas,monospace;white-space:nowrap}
 .actions{display:grid;grid-template-columns:1fr 90px;gap:10px}
 .primary{background:var(--ink);color:white;border-color:var(--ink)}.primary:hover{background:#36566d}
 .chart-panel{display:grid;grid-template-rows:48px minmax(0,1fr)}
+.chart-body{display:flex;flex-direction:column;min-height:0}
+.energy-summary{flex:none;padding:6px 20px 10px;border-bottom:1px solid var(--line)}
+.energy-row{display:grid;grid-template-columns:180px minmax(0,1fr) 100px;align-items:center;gap:12px;min-height:32px;font-size:12px}
+.energy-bar{display:flex;height:12px;background:#edf0f3;border-radius:3px;overflow:hidden}
+.energy-bar i{display:block;height:100%;flex-shrink:0}
+#energySensibleA{background:var(--a)}#energySensibleB{background:var(--b)}
+#energyLatentA,#energyLatentB{background:#7c3aed}
+#toggleEnergy[aria-pressed="true"]{background:var(--ink);color:white;border-color:var(--ink)}
 .scenario-row{display:flex;align-items:center;gap:8px;font-size:12px}.scenario-row select{flex:1;min-width:0}
 #phaseLabel{font-size:13px;fill:#376f68}
 .chart-head{display:flex;align-items:center;gap:12px;padding:0 20px}
@@ -50,7 +58,7 @@ output{text-align:right;font:13px Consolas,monospace;white-space:nowrap}
 .speed-control input{min-width:0;accent-color:var(--ink)}.speed-control output{font-size:12px}
 .legend{display:flex;gap:16px;font-size:12px}
 .legend span::before{content:"";display:inline-block;width:17px;height:3px;margin-right:6px;vertical-align:middle;background:currentColor}
-#chart{width:100%;height:100%;display:block;min-height:0}
+#chart{width:100%;height:100%;display:block;min-height:0;flex:1}
 #chart text{font:12px "Microsoft JhengHei",sans-serif;fill:var(--muted)}
 #chart .axis-title{font-size:14px;fill:var(--ink)}
 #chart .trace{fill:none;stroke-width:4}#chart #equilibriumLabel{font-size:14px;fill:#376f68}
@@ -69,15 +77,20 @@ output{text-align:right;font:13px Consolas,monospace;white-space:nowrap}
 </head>
 <body>
 <main class="app">
-<header class="topbar"><div class="mark" aria-hidden="true"><i></i><i></i></div><h1>熱平衡與融冰</h1><select id="materialMode" aria-label="A、B 的物質"><option value="ice-water">冰 ＋ 水</option><option value="ice-tea">冰 ＋ 茶</option><option value="same">鋁塊 ＋ 鋁塊</option><option value="different">茶 ＋ 檸檬</option></select><a href="../index.html">目錄 ↗</a></header>
+<header class="topbar"><div class="mark" aria-hidden="true"><i></i><i></i></div><h1>熱平衡與融冰</h1><select id="materialMode" aria-label="A、B 的物質"><option value="ice-water">冰 ＋ 水</option><option value="ice-tea">冰 ＋ 茶</option><option value="same">鋁塊 ＋ 鋁塊</option><option value="different">茶 ＋ 檸檬</option></select><button id="toggleEnergy" aria-pressed="false" aria-controls="energySummary" title="播放完成後顯示總能量">顯示能量</button><a href="../index.html">目錄 ↗</a></header>
 <div class="workspace">
 <div class="left">
 <section class="panel scene" aria-label="兩個物體的熱傳遞動畫">
 <div class="scene-head"><span>絕熱系統</span><span id="status" role="status">未接觸</span></div>
 <svg id="scene" viewBox="0 0 360 280" role="img" aria-labelledby="sceneDescription">
 <title id="sceneDescription">兩個鋁塊的即時溫度與淨熱流方向</title>
-<defs><pattern id="hatch" width="8" height="8" patternUnits="userSpaceOnUse"><path d="M0 8L8 0" stroke="#c3d1db"/></pattern></defs>
+<defs>
+<pattern id="hatch" width="8" height="8" patternUnits="userSpaceOnUse"><path d="M0 8L8 0" stroke="#c3d1db"/></pattern>
+<clipPath id="liquidClip"><use href="#liquidBody"/><use href="#liquidSurface"/></clipPath>
+<radialGradient id="meltWaterTint"><stop offset="0" stop-color="#247ee0" stop-opacity=".95"/><stop offset=".65" stop-color="#429eed" stop-opacity=".8"/><stop offset="1" stop-color="#429eed" stop-opacity="0"/></radialGradient>
+</defs>
 <text id="sceneNameA" x="88" y="35" class="body-name" text-anchor="middle">A</text><text id="sceneNameB" x="272" y="35" class="body-name" text-anchor="middle">B</text>
+<g id="equilibriumTemperatures" fill="#edf7f3" stroke="#376f68" stroke-width="2" hidden><rect x="16" y="45" width="144" height="36" rx="8"/><rect x="200" y="45" width="144" height="36" rx="8"/></g>
 <text id="temperatureA" x="88" y="69" class="temperature" text-anchor="middle">20.0 °C</text><text id="temperatureB" x="272" y="69" class="temperature" text-anchor="middle">80.0 °C</text>
 <text id="flowLabel" x="180" y="103" class="flow-label" text-anchor="middle"></text>
 <rect x="28" y="230" width="304" height="10" fill="url(#hatch)"/>
@@ -85,8 +98,9 @@ output{text-align:right;font:13px Consolas,monospace;white-space:nowrap}
 <g id="tea" hidden>
 <path d="M36-69H48C72-69 70-29 44-29" fill="none" stroke="#8ba5b5" stroke-width="8"/>
 <path d="M-48-79H48L39-14Q36 0 20 0H-20Q-36 0-39-14Z" fill="#eff7fa" stroke="#2468ad" stroke-width="2"/>
-<path d="M-42-60H42L35-15Q33-6 19-6H-19Q-33-6-35-15Z" fill="#b17b3c"/>
-<ellipse cx="0" cy="-60" rx="42" ry="8" fill="#cb9850"/>
+<path id="liquidBody" d="M-42-60H42L35-15Q33-6 19-6H-19Q-33-6-35-15Z" fill="#b17b3c"/>
+<ellipse id="liquidSurface" cx="0" cy="-60" rx="42" ry="8" fill="#cb9850"/>
+<g id="meltWater" clip-path="url(#liquidClip)" hidden><ellipse id="meltWaterCloud" fill="url(#meltWaterTint)"/></g>
 <path d="M-25-51L-21-23" fill="none" stroke="#f6dfb3" stroke-width="4" stroke-linecap="round"/>
 </g>
 <g id="lemon" hidden>
@@ -117,7 +131,12 @@ output{text-align:right;font:13px Consolas,monospace;white-space:nowrap}
 </section>
 </div>
 <section class="panel chart-panel" aria-labelledby="chartTitle">
-<div class="chart-head"><h2 id="chartTitle">溫度—熱量圖</h2><div class="speed-control"><label for="speed">速度</label><input id="speed" type="range" min="0.25" max="2" step="0.25" value="1" aria-label="模擬播放速度" aria-valuetext="1 倍速"><output id="speedValue" for="speed">1×</output></div><div class="legend"><span id="legendA" class="a">A</span><span id="legendB" class="b">B</span></div></div>
+<div class="chart-head"><h2 id="chartTitle">溫度—熱量圖</h2><div class="speed-control"><label for="speed">速度</label><input id="speed" type="range" min="0.25" max="4" step="0.25" value="2" aria-label="模擬播放速度" aria-valuetext="2 倍速"><output id="speedValue" for="speed">2×</output></div><div class="legend"><span id="legendA" class="a">A</span><span id="legendB" class="b">B</span></div></div>
+<div class="chart-body">
+<div id="energySummary" class="energy-summary" role="group" aria-label="降至 0°C 可放出的能量與冰升至 0°C 並全溶所需能量" hidden>
+<div id="energyRowA" class="energy-row" role="img"><span id="energyNameA"></span><div class="energy-bar" aria-hidden="true"><i id="energySensibleA"></i><i id="energyLatentA"></i></div><output id="energyTotalA"></output></div>
+<div id="energyRowB" class="energy-row" role="img"><span id="energyNameB"></span><div class="energy-bar" aria-hidden="true"><i id="energySensibleB"></i><i id="energyLatentB"></i></div><output id="energyTotalB"></output></div>
+</div>
 <svg id="chart" viewBox="0 0 720 610" role="img" aria-labelledby="chartDescription">
 <title id="chartDescription">冷物體由左下升溫，熱物體由右上降溫，兩條溫度線在熱平衡時相遇</title><g id="grid"></g>
 <line id="initialGuideA" class="temperature-guide" x1="64" x2="670" stroke="#2468ad"/>
@@ -130,6 +149,7 @@ output{text-align:right;font:13px Consolas,monospace;white-space:nowrap}
 <circle id="pointA" r="6" fill="#2468ad"/><circle id="pointB" r="6" fill="#b64d29"/>
 <circle id="meetingPoint" r="7" fill="#376f68" stroke="white" stroke-width="2" hidden/><text id="equilibriumLabel" hidden>熱平衡</text>
 </svg>
+</div>
 </section>
 </div>
 </main>
