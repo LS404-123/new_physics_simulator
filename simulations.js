@@ -120,6 +120,14 @@
       href: "./water-density/index.html",
       image: "./water-density/preview.png",
       tags: ["密度", "水", "溫度", "熱膨脹", "粒子", "固定體積", "density"]
+    },
+    {
+      title: "冰的熔解比潛熱：雙漏斗實驗",
+      description: "觀察集水質量與電能去向，比較熔解比潛熱的實驗值及真確值。",
+      topic: "熱與氣體",
+      href: "./ice-fusion-experiment/index.html",
+      image: "./ice-fusion-experiment/preview.png",
+      tags: ["熔解比潛熱", "冰", "雙漏斗", "對照實驗", "焦耳計", "集水", "質量", "實驗操作"]
     }
   ];
 
