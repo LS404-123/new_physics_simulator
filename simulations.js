@@ -128,6 +128,14 @@
       href: "./ice-fusion-experiment/index.html",
       image: "./ice-fusion-experiment/preview.png",
       tags: ["熔解比潛熱", "冰", "雙漏斗", "對照實驗", "焦耳計", "集水", "質量", "實驗操作"]
+    },
+    {
+      title: "水的汽化比潛熱：千瓦時計實驗",
+      description: "觀察沸騰前後的質量及供能，記錄初、末讀數，直接比較汽化比潛熱的實驗值與真確值。",
+      topic: "熱與氣體",
+      href: "./water-vaporization-experiment/index.html",
+      image: "./water-vaporization-experiment/preview.png",
+      tags: ["汽化比潛熱", "水", "沸騰", "千瓦時計", "電子天平", "餘熱", "實驗操作"]
     }
   ];
 
