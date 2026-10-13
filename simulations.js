@@ -136,6 +136,14 @@
       href: "./water-vaporization-experiment/index.html",
       image: "./water-vaporization-experiment/preview.png",
       tags: ["汽化比潛熱", "水", "沸騰", "千瓦時計", "電子天平", "餘熱", "實驗操作"]
+    },
+    {
+      title: "氣體三定律：裝置與圖像",
+      description: "推拉針筒活塞，觀察氣壓計與圖上數據點同步移動；切換三條氣體定律，比較固定量及正反比關係，並對照實驗照片。",
+      topic: "熱與氣體",
+      href: "./gas-laws/index.html",
+      image: "./gas-laws/preview.png",
+      tags: ["氣體定律", "波以耳", "查理", "壓力定律", "壓強", "體積", "絕對溫度", "K", "攝氏", "p–V", "V–T", "p–T", "Boyle", "Charles", "gas laws"]
     }
   ];
 
