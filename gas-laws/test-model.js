@@ -16,6 +16,11 @@ for (const mode of Object.keys(M.modes)) {
     if (mode === 'pressure') near(s.V, 20);
     for (const reciprocal of [false, true]) for (const celsius of [false, true]) {
       const spec = M.graphSpec(mode, reciprocal, celsius);
+      const bounds = M.graphBounds(spec);
+      const gridWidth = (bounds.right - bounds.left) * (spec.xTicks[1] - spec.xTicks[0]) / (spec.xMax - spec.xMin);
+      const gridHeight = (bounds.bottom - bounds.top) * (spec.yTicks[1] - spec.yTicks[0]) / spec.yMax;
+      near(gridWidth, gridHeight);
+      assert.ok(bounds.left >= 66 && bounds.right <= 630 && bounds.top >= 42 && bounds.bottom <= 344);
       const point = M.point(s, spec);
       assert.ok(point.x >= spec.xMin && point.x <= spec.xMax && point.y <= spec.yMax);
       const curve = M.curve(mode, spec);
@@ -77,7 +82,11 @@ for (const mode of ['charles', 'pressure']) {
   assert.equal(kelvin.xMax, celsius.xMax);
   assert.deepEqual(kelvin.xTicks, celsius.xTicks);
   assert.equal(kelvin.yMax, celsius.yMax);
+  assert.deepEqual(M.graphBounds(kelvin), M.graphBounds(celsius), '切換溫度單位時座標軸必須固定');
   const from = M.curve(mode, kelvin), to = M.curve(mode, celsius);
   from.forEach((p, i) => { near(p.x - to[i].x, 273.15); near(p.y, to[i].y); });
 }
-console.log('通過：三條定律、動畫控制量、圖線變形與中斷、K／°C 固定座標軸及純平移、單位與邊界。');
+const volumeBounds = M.graphBounds(M.graphSpec('boyle'));
+const reciprocalBounds = M.graphBounds(M.graphSpec('boyle', true));
+for (const side of Object.keys(volumeBounds)) near(volumeBounds[side], reciprocalBounds[side]);
+console.log('通過：三條定律、動畫控制量、圖線變形與中斷、K／°C 固定座標軸及純平移、1:1 網格、單位與邊界。');

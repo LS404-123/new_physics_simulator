@@ -3,7 +3,7 @@
   const M = GasLaws;
   const $ = id => document.getElementById(id);
   const NS = 'http://www.w3.org/2000/svg';
-  const bounds = { left: 66, right: 630, top: 42, bottom: 344 };
+  let bounds;
   let mode = 'boyle', reciprocal = false, celsius = false;
   let state = M.solve(mode, M.modes[mode].initial), spec;
   const reducedMotion = matchMedia('(prefers-reduced-motion: reduce)');
@@ -69,6 +69,7 @@
     $('extrapolation').removeAttribute('mask');
     graphMotion = morph && plot && !reducedMotion.matches ? { from: plot, start: performance.now() } : undefined;
     spec = M.graphSpec(mode, reciprocal, celsius);
+    bounds = M.graphBounds(spec);
     $('grid').replaceChildren();
     for (const x of spec.xTicks) {
       gridElement('line', { 'data-x-tick': '', y1: bounds.top, y2: bounds.bottom, stroke: '#e1eaee' });

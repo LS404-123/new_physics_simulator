@@ -45,6 +45,13 @@
       : spec.celsius ? state.celsius : state.T,
     y: state.mode === 'charles' ? state.V : state.p };
   }
+  function graphBounds(spec) {
+    const columns = (spec.xMax - spec.xMin) / (spec.xTicks[1] - spec.xTicks[0]);
+    const rows = spec.yMax / (spec.yTicks[1] - spec.yTicks[0]);
+    const cell = Math.min(564 / columns, 302 / rows);
+    return { left: 348 - columns * cell / 2, right: 348 + columns * cell / 2,
+      top: 344 - rows * cell, bottom: 344 };
+  }
   function curve(mode, spec) {
     const { min, max } = modes[mode];
     return Array.from({ length: 101 }, (_, i) => point(solve(mode, min + (max - min) * i / 100), spec));
@@ -57,5 +64,5 @@
       return { x: start.x + (p.x - start.x) * eased, y: start.y + (p.y - start.y) * eased };
     });
   }
-  return { ATMOSPHERE, NR, modes, solve, transitionState, graphSpec, point, curve, morphPoints };
+  return { ATMOSPHERE, NR, modes, solve, transitionState, graphSpec, graphBounds, point, curve, morphPoints };
 });
