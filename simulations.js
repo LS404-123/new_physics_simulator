@@ -152,6 +152,14 @@
       href: "./gas-mole/index.html",
       image: "./gas-mole/preview.png",
       tags: ["mol", "摩爾", "物質的量", "粒子數", "阿伏伽德羅常數", "氦氣", "計數", "mole"]
+    },
+    {
+      title: "籃球打氣：同一氣體量，兩種狀態",
+      description: "推活塞加入空氣，觀察兩邊粒子運動與撞壁；比較等壓下擴大的空間與固定體積籃球，理解加氣為何令壓強上升。",
+      topic: "DSE問題",
+      href: "./basketball-pressure/index.html",
+      image: "./basketball-pressure/preview.png",
+      tags: ["籃球", "打氣", "活塞", "氣體", "壓強", "體積", "恆溫", "粒子", "碰撞", "撞壁", "2014", "120", "156", "打氣次數"]
     }
   ];
 
