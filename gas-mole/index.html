@@ -40,6 +40,7 @@ button.primary{background:var(--accent);color:white;border-color:var(--accent)}
 .graph{width:100%;height:172px;display:block;margin-top:5px}.graph text{font:12px "Segoe UI","Microsoft JhengHei",sans-serif;fill:var(--muted)}.graph .axis{stroke:#7f99a5;fill:none}.graph .grid{stroke:#dce7eb;fill:none}.graph .curve{stroke:var(--accent);stroke-width:2.5;fill:none}.graph .guide{stroke:var(--accent);stroke-dasharray:4 4;fill:none}.graph .point{fill:var(--accent);stroke:white;stroke-width:2}
 .footer{display:flex;align-items:center;gap:12px;padding:8px 24px}.footer .footnote{display:flex;align-items:center;gap:12px;font-size:11px;line-height:1.6;color:var(--muted);margin-right:auto}.footnote a{display:inline-flex;align-items:center;min-height:44px;color:var(--muted);text-underline-offset:3px}.footer button{font-size:13px}.next{min-width:185px}
 .lesson[data-step="3"] .controls{margin-top:10px}.lesson[data-step="3"] .view-actions{margin-top:8px}
+.lesson[data-step="3"] .intro{min-height:0}
 .lesson[data-step="3"] .evidence{display:grid;grid-template-columns:1fr auto;align-items:center;margin-top:14px;padding-top:10px}
 .lesson[data-step="3"] .equation{margin:0;font-size:21px}.lesson[data-step="3"] .evidence p{grid-column:1/-1;font-size:13px;margin-top:7px;line-height:1.5}
 .lesson[data-step="3"] .graph{grid-column:1/-1;height:144px}.lesson[data-step="3"] .legend{padding-top:8px}
@@ -67,15 +68,15 @@ button.primary{background:var(--accent);color:white;border-color:var(--accent)}
       <header><h2 id="lesson-title"></h2><p class="intro" id="intro"></p></header>
       <div class="controls">
         <div id="small-controls"><div class="control-row"><button id="remove">減少 1 粒</button><output id="small-amount"></output><button id="add">加入 1 粒</button></div><p class="control-caption" id="control-caption"></p></div>
-        <div id="mole-controls" hidden><label class="range-label" for="moles">物質的量 <span id="n-symbol"></span><output id="mole-amount" for="moles"></output></label><input id="moles" type="range" min="1" max="8" value="4" step="1" aria-valuetext="1 mol"><div class="range-ends"><span>0.25 mol</span><span>2 mol</span></div></div>
+        <div id="mole-controls" hidden><label class="range-label" for="moles">物質的量 <span id="n-symbol"></span><output id="mole-amount" for="moles"></output></label><input id="moles" type="range" min="1" max="5" value="1" step="1" aria-valuetext="1 mol"><div class="range-ends"><span>1 mol</span><span>5 mol</span></div></div>
         <div id="definition" hidden><div class="unit-pair"><span>每 1 打</span><strong>12 粒</strong></div><div class="unit-pair"><span>每 1 mol</span><strong id="definition-count"></strong></div><p class="control-caption">都是按固定數目來計數，只是每一份的數量不同。</p></div>
         <div class="view-actions"><button id="arrange" aria-pressed="false">排好數一數</button><button id="pause" aria-pressed="false">暫停運動</button></div>
       </div>
       <div class="evidence"><h3 id="evidence-title"></h3><div class="equation" id="equation"></div><p id="evidence-text"></p>
         <svg class="graph" id="graph" viewBox="0 0 310 180" role="img" aria-labelledby="graph-title" hidden>
           <title id="graph-title">粒子數與物質的量成正比</title>
-          <text x="40" y="14">N / 10²³</text><path class="grid" d="M45 82H280M45 24H280M162.5 24V140M280 24V140"/><path class="axis" d="M45 22V140H288"/>
-          <text x="37" y="144" text-anchor="end">0</text><text x="37" y="86" text-anchor="end">6.02</text><text x="37" y="28" text-anchor="end">12.04</text><text x="45" y="158" text-anchor="middle">0</text><text x="162.5" y="158" text-anchor="middle">1</text><text x="280" y="158" text-anchor="middle">2</text><text x="280" y="176" text-anchor="end">n / mol</text>
+          <text x="40" y="14">N / 10²³</text><path class="grid" d="M45 93.6H280M45 24H280M139 24V140M280 24V140"/><path class="axis" d="M45 22V140H288"/>
+          <text x="37" y="144" text-anchor="end">0</text><text x="37" y="97.6" text-anchor="end">12.04</text><text x="37" y="28" text-anchor="end">30.11</text><text x="45" y="158" text-anchor="middle">0</text><text x="139" y="158" text-anchor="middle">2</text><text x="280" y="158" text-anchor="middle">5</text><text x="280" y="176" text-anchor="end">n / mol</text>
           <path id="graph-line" class="curve"/><path id="graph-guide" class="guide"/><circle id="graph-point" class="point" r="5"/>
         </svg>
       </div>
