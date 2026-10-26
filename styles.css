@@ -109,12 +109,30 @@ a { color: inherit; }
 }
 
 .header-note {
+  margin-left: auto;
   color: var(--muted);
   font-family: ui-monospace, "Cascadia Mono", Consolas, monospace;
   font-size: 12px;
   letter-spacing: 0.08em;
   text-transform: uppercase;
 }
+
+.refresh-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  gap: 8px;
+  min-height: 44px;
+  padding: 8px 12px;
+  color: var(--blueprint);
+  background: var(--sheet);
+  border: 1px solid var(--line-dark);
+  cursor: pointer;
+}
+
+.refresh-button:hover { background: var(--paper); }
+.refresh-button svg { width: 18px; height: 18px; fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
 
 main {
   width: min(1180px, calc(100% - 40px));
@@ -790,6 +808,7 @@ footer p { margin: 0; }
 }
 
 @media (max-width: 900px) {
+  .header-note { display: none; }
   .hero {
     min-height: 0;
     grid-template-columns: minmax(0, 1fr) 180px;
@@ -813,8 +832,10 @@ footer p { margin: 0; }
     position: relative;
     top: auto;
     min-height: 62px;
+    gap: 12px;
   }
-  .header-note { display: none; }
+  .brand { font-size: 14px; }
+  .refresh-button { font-size: 14px; padding-inline: 8px; }
   .background-stage { position: relative; top: auto; min-height: 0; }
   .hero {
     grid-template-columns: 1fr;

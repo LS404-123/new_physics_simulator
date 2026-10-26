@@ -405,6 +405,7 @@
     renderFilters();
   }
 
+  document.querySelector("#refresh-page")?.addEventListener("click", () => window.location.reload());
   elements.search.addEventListener("input", render);
   elements.clear.addEventListener("click", () => {
     elements.search.value = "";
