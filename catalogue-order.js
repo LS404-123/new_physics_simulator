@@ -5,9 +5,9 @@ window.catalogueOrder = [
   "./HEAT/internal-energy-particle-model/index.html",
   "./HEAT/heat-transfer-conduction-convection/index.html",
   "./HEAT/thermal-radiation-balance/index.html",
-  "./greenhouse-radiation/index.html",
+  "./HEAT/greenhouse-radiation/index.html",
   "./HEAT/heat-capacity-data-experiment/index.html",
-  "./DSE/HEAT/resistance-thermometer-graph/index.html",
-  "./thermal-equilibrium/index.html",
-  "./specific-heat-errors/index.html"
+  "./HEAT/resistance-thermometer-graph/index.html",
+  "./HEAT/thermal-equilibrium/index.html",
+  "./HEAT/specific-heat-errors/index.html"
 ];

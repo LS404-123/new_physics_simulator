@@ -569,11 +569,18 @@ main {
   background: var(--line);
 }
 
-.topic-subtitle {
-  margin: -6px 0 18px;
-  color: var(--muted);
-  font-size: 14px;
+.subtopic-section + .subtopic-section { margin-top: 32px; }
+
+.subtopic-heading {
+  display: flex;
+  align-items: baseline;
+  flex-wrap: wrap;
+  gap: 8px 14px;
+  margin-bottom: 14px;
 }
+
+.subtopic-heading h4 { margin: 0; font-size: 16px; }
+.subtopic-heading span { color: var(--muted); font-size: 12px; }
 
 .simulation-grid {
   display: grid;
@@ -659,7 +666,7 @@ main {
 
 .card-meta span:last-child { color: var(--muted); }
 
-.simulation-card h4 {
+.simulation-card h5 {
   margin: 0;
   font-family: var(--serif);
   font-size: 22px;

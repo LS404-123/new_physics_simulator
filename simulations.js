@@ -20,23 +20,25 @@
     const ordered = applyCardOrder(items, order);
     const from = ordered.findIndex(item => item.href === fromHref);
     const to = ordered.findIndex(item => item.href === toHref);
-    if (from >= 0 && to >= 0 && ordered[from].topic === ordered[to].topic) {
+    if (from >= 0 && to >= 0 && ordered[from].topic === ordered[to].topic
+      && ordered[from].subtopic === ordered[to].subtopic) {
       ordered.splice(to, 0, ordered.splice(from, 1)[0]);
     }
     return ordered.map(item => item.href);
   }
 
-  if (typeof module !== "undefined" && module.exports) {
-    module.exports = { getCatalogueScrollState, applyCardOrder, moveCardOrder };
-    return;
-  }
+  // 分類依據：專案根目錄的 PhyCompulsory_and_Elective_Part_Revised_Curriculum-20151211C.pdf，第 1–3 頁。
+  const topics = ["熱和氣體", "力和運動", "DSE問題"];
+  const subtopics = ["溫度、熱和內能", "熱轉移過程", "物態的改變", "氣體"];
 
-  // 新增模擬器：複製一筆資料至清單末尾，首頁會自動把它列為最新加入。
+  // DSE問題另作目錄分類；所有模擬器仍使用正式課程子課題及所屬物理主題資料夾。
+  // 新增模擬器：加至清單末尾，首頁會自動把它列為最新加入。
   const simulations = [
     {
       title: "溫度計校準與斜率",
       description: "利用兩個固定點建立液柱高度與溫度的線性關係，理解斜率是液柱高度的改變率。",
-      topic: "熱與氣體",
+      topic: "熱和氣體",
+      subtopic: "溫度、熱和內能",
       href: "./HEAT/thermometer-calibration-slope/index.html",
       image: "./HEAT/thermometer-calibration-slope/preview.png",
       tags: ["溫度", "溫度計", "校準", "固定點", "斜率"]
@@ -44,7 +46,8 @@
     {
       title: "粒子能量實驗台",
       description: "比較質量、溫度與物態如何改變粒子的總動能、總勢能及物體內能。",
-      topic: "熱與氣體",
+      topic: "熱和氣體",
+      subtopic: "溫度、熱和內能",
       href: "./HEAT/internal-energy-particle-model/index.html",
       image: "./HEAT/internal-energy-particle-model/preview.png",
       tags: ["內能", "粒子模型", "動能", "勢能", "冰", "水"]
@@ -52,7 +55,8 @@
     {
       title: "熱如何移動：傳導與對流",
       description: "觀察固體粒子逐粒推撞傳能，以及密度差配合重力形成的流體循環。",
-      topic: "熱與氣體",
+      topic: "熱和氣體",
+      subtopic: "熱轉移過程",
       href: "./HEAT/heat-transfer-conduction-convection/index.html",
       image: "./HEAT/heat-transfer-conduction-convection/preview.png",
       tags: ["熱傳", "傳導", "對流", "粒子推撞", "密度", "浮力"]
@@ -60,7 +64,8 @@
     {
       title: "熱輻射收支：何時吸熱，何時放熱？",
       description: "比較物體放出、環境送入及淨輻射功率，判斷物體何時淨吸熱或淨放熱。",
-      topic: "熱與氣體",
+      topic: "熱和氣體",
+      subtopic: "熱轉移過程",
       href: "./HEAT/thermal-radiation-balance/index.html",
       image: "./HEAT/thermal-radiation-balance/preview.png",
       tags: ["熱輻射", "淨輻射", "吸收體", "輻射體", "Stefan-Boltzmann 定律", "熱平衡"]
@@ -68,7 +73,8 @@
     {
       title: "用數據發現 Q = CΔT",
       description: "逐次量度兩個匿名樣本，以 Q 對 ΔT 圖及過原點最佳擬合線求出熱容量。",
-      topic: "熱與氣體",
+      topic: "熱和氣體",
+      subtopic: "溫度、熱和內能",
       href: "./HEAT/heat-capacity-data-experiment/index.html",
       image: "./HEAT/heat-capacity-data-experiment/preview.png",
       tags: ["熱容量", "電熱器", "實驗數據", "最佳擬合線", "斜率", "Q = CΔT"]
@@ -77,14 +83,16 @@
       title: "兩點校準：由電阻推算溫度",
       description: "只已知兩個固定點的電阻，用萬用錶量度電阻，再按校準直線推算溫度。",
       topic: "DSE問題",
-      href: "./DSE/HEAT/resistance-thermometer-graph/index.html",
-      image: "./DSE/HEAT/resistance-thermometer-graph/preview.png",
-      tags: ["萬用錶", "校準", "推算溫度", "實際溫度", "非線性", "讀圖", "恆溫槽", "誤差"]
+      subtopic: "溫度、熱和內能",
+      href: "./HEAT/resistance-thermometer-graph/index.html",
+      image: "./HEAT/resistance-thermometer-graph/preview.png",
+      tags: ["DSE問題", "萬用錶", "校準", "推算溫度", "實際溫度", "非線性", "讀圖", "恆溫槽", "誤差"]
     },
     {
       title: "粒子動能與勢能",
       description: "用粒子速率比較平均動能，以固體、液體及氣體示意內部勢能的高低。",
-      topic: "熱與氣體",
+      topic: "熱和氣體",
+      subtopic: "溫度、熱和內能",
       href: "./HEAT/particle-ke-pe/index.html",
       image: "./HEAT/particle-ke-pe/preview.png",
       tags: ["粒子模型", "平均動能", "內部勢能", "速率", "物態", "固體", "液體", "氣體", "KE", "PE"]
@@ -92,76 +100,115 @@
     {
       title: "比熱容量實驗：誤差看得見",
       description: "選擇水或金屬塊的實驗誤差，觀察裝置與比熱容量的偏差，再找出原因及預防措施。",
-      topic: "熱與氣體",
-      href: "./specific-heat-errors/index.html",
-      image: "./specific-heat-errors/preview.png",
+      topic: "熱和氣體",
+      subtopic: "溫度、熱和內能",
+      href: "./HEAT/specific-heat-errors/index.html",
+      image: "./HEAT/specific-heat-errors/preview.png",
       tags: ["比熱容量", "實驗誤差", "預防措施", "焦耳計", "總供能", "溫升", "散熱", "攪拌"]
     },
     {
       title: "溫室裡的熱往哪裡去？",
       description: "跟著陽光與紅外線的路徑，觀察玻璃的吸收與再輻射，用能量收支解釋保溫為何仍會散熱。",
-      topic: "熱與氣體",
-      href: "./greenhouse-radiation/index.html",
-      image: "./greenhouse-radiation/preview.png",
+      topic: "熱和氣體",
+      subtopic: "熱轉移過程",
+      href: "./HEAT/greenhouse-radiation/index.html",
+      image: "./HEAT/greenhouse-radiation/preview.png",
       tags: ["溫室", "玻璃", "紅外線", "吸收", "再輻射", "保溫", "散熱", "熱平衡", "greenhouse"]
     },
     {
       title: "熱平衡與融冰",
       description: "調校冰與水或茶的質量及初溫，觀察融冰的 0°C 平台，比較仍有冰、啱啱全溶及全溶後升溫的熱平衡。",
-      topic: "熱與氣體",
-      href: "./thermal-equilibrium/index.html",
-      image: "./thermal-equilibrium/preview.png",
+      topic: "熱和氣體",
+      subtopic: "物態的改變",
+      href: "./HEAT/thermal-equilibrium/index.html",
+      image: "./HEAT/thermal-equilibrium/preview.png",
       tags: ["熱平衡", "融冰", "冰", "水", "茶", "物態變化", "潛熱", "熱容量", "比熱容量", "質量", "平衡溫度", "能量守恆", "熱流", "T–Q", "溫度熱量圖"]
     },
     {
       title: "水的溫度與密度",
       description: "放大燒杯中的一小部分，調整 20–80°C 水溫，以 10 倍膨脹幅度觀察粒子向四周散開，以及固定範圍內的粒子數變化。",
-      topic: "熱與氣體",
-      href: "./water-density/index.html",
-      image: "./water-density/preview.png",
+      topic: "熱和氣體",
+      subtopic: "熱轉移過程",
+      href: "./HEAT/water-density/index.html",
+      image: "./HEAT/water-density/preview.png",
       tags: ["密度", "水", "溫度", "熱膨脹", "粒子", "固定體積", "density"]
     },
     {
       title: "冰的熔解比潛熱：雙漏斗實驗",
       description: "觀察集水質量與電能去向，比較熔解比潛熱的實驗值及真確值。",
-      topic: "熱與氣體",
-      href: "./ice-fusion-experiment/index.html",
-      image: "./ice-fusion-experiment/preview.png",
+      topic: "熱和氣體",
+      subtopic: "物態的改變",
+      href: "./HEAT/ice-fusion-experiment/index.html",
+      image: "./HEAT/ice-fusion-experiment/preview.png",
       tags: ["熔解比潛熱", "冰", "雙漏斗", "對照實驗", "焦耳計", "集水", "質量", "實驗操作"]
     },
     {
       title: "水的汽化比潛熱：千瓦時計實驗",
       description: "觀察沸騰前後的質量及供能，記錄初、末讀數，直接比較汽化比潛熱的實驗值與真確值。",
-      topic: "熱與氣體",
-      href: "./water-vaporization-experiment/index.html",
-      image: "./water-vaporization-experiment/preview.png",
+      topic: "熱和氣體",
+      subtopic: "物態的改變",
+      href: "./HEAT/water-vaporization-experiment/index.html",
+      image: "./HEAT/water-vaporization-experiment/preview.png",
       tags: ["汽化比潛熱", "水", "沸騰", "千瓦時計", "電子天平", "餘熱", "實驗操作"]
     },
     {
       title: "氣體三定律：裝置與圖像",
       description: "推拉針筒活塞，觀察氣壓計與圖上數據點同步移動；切換三條氣體定律，比較固定量及正反比關係，並對照實驗照片。",
-      topic: "熱與氣體",
-      href: "./gas-laws/index.html",
-      image: "./gas-laws/preview.png",
+      topic: "熱和氣體",
+      subtopic: "氣體",
+      href: "./HEAT/gas-laws/index.html",
+      image: "./HEAT/gas-laws/preview.png",
       tags: ["氣體定律", "波以耳", "查理", "壓力定律", "壓強", "體積", "絕對溫度", "K", "攝氏", "p–V", "V–T", "p–T", "Boyle", "Charles", "gas laws"]
+    },
+    {
+      title: "波以耳定律：活塞與壓力計",
+      description: "推拉立體活塞，觀察氣體升降溫、壓力逐漸穩定，以及橡膠管內額外體積對讀數的影響。",
+      topic: "熱和氣體",
+      subtopic: "氣體",
+      href: "./HEAT/boyle-apparatus/index.html",
+      image: "./HEAT/boyle-apparatus/preview.png",
+      tags: ["波以耳定律", "氣體", "活塞", "壓力計", "體積", "壓強", "Boyle", "Anatomy", "實驗誤差", "溫度", "橡膠管"]
+    },
+    {
+      title: "雙容器壓力平衡：開閥與氣體流動",
+      description: "切開球形容器看氣體交換；開啟幼管閥門，以實際通過粒子顯示淨移動方向，觀察壓力逐漸接近。忽略連接管體積。",
+      topic: "熱和氣體",
+      subtopic: "氣體",
+      href: "./HEAT/pressure-equilibrium/index.html",
+      image: "./HEAT/pressure-equilibrium/preview.png",
+      tags: ["氣體", "壓力平衡", "球形", "剖面", "淨移動", "閥門", "粒子", "流向", "混合", "pressure equilibrium", "Anatomy"]
     },
     {
       title: "一 mol 有多少？氣體粒子計數",
       description: "從逐粒數氦原子、一打 12 粒，逐步認識 1 mol 的粒子數；改變 mol 數，觀察總粒子數與圖像同步變化。",
-      topic: "熱與氣體",
-      href: "./gas-mole/index.html",
-      image: "./gas-mole/preview.png",
+      topic: "熱和氣體",
+      subtopic: "氣體",
+      href: "./HEAT/gas-mole/index.html",
+      image: "./HEAT/gas-mole/preview.png",
       tags: ["mol", "摩爾", "物質的量", "粒子數", "阿伏伽德羅常數", "氦氣", "計數", "mole"]
     },
     {
       title: "籃球打氣：同一氣體量，兩種狀態",
       description: "推活塞加入空氣，觀察兩邊粒子運動與撞壁；比較等壓下擴大的空間與固定體積籃球，理解加氣為何令壓強上升。",
       topic: "DSE問題",
-      href: "./basketball-pressure/index.html",
-      image: "./basketball-pressure/preview.png",
-      tags: ["籃球", "打氣", "活塞", "氣體", "壓強", "體積", "恆溫", "粒子", "碰撞", "撞壁", "2014", "120", "156", "打氣次數"]
+      subtopic: "氣體",
+      href: "./HEAT/basketball-pressure/index.html",
+      image: "./HEAT/basketball-pressure/preview.png",
+      tags: ["DSE問題", "籃球", "打氣", "活塞", "氣體", "壓強", "體積", "恆溫", "粒子", "碰撞", "撞壁", "2014", "120", "156", "打氣次數"]
     }
   ];
+
+  function groupBySubtopic(items) {
+    // 分組依課程次序；手動排序只改變組內卡片。
+    return subtopics
+      .map(subtopic => [subtopic, items.filter(item => item.subtopic === subtopic)])
+      .filter(([, group]) => group.length);
+  }
+
+  if (typeof module !== "undefined" && module.exports) {
+    module.exports = { getCatalogueScrollState, applyCardOrder, moveCardOrder, groupBySubtopic, matchesSearch, simulations, topics, subtopics };
+    return;
+  }
 
   // 排序設定很小，每次開頁重新讀取，避免重新發布後仍沿用快取順序。
   await new Promise(resolve => {
@@ -184,7 +231,6 @@
     catalogueHead: document.querySelector(".catalogue-head"),
   };
 
-  const topics = ["熱與氣體", "力與運動", "DSE問題"];
   const editingOrder = new URLSearchParams(window.location.search).get("sort") === "1";
   let loadedOrder = Array.isArray(window.catalogueOrder) ? [...window.catalogueOrder] : [];
   let cardOrder = [...loadedOrder];
@@ -231,6 +277,7 @@
     button.addEventListener("click", () => {
       selectedTopic = topic;
       render();
+      elements.filters.querySelector('[aria-pressed="true"]').focus();
     });
     return button;
   }
@@ -253,7 +300,7 @@
     const meta = createElement("div", "card-meta");
     meta.append(createElement("span", "", simulation.topic), createElement("span", "", "互動模擬"));
 
-    const title = createElement("h4", "", simulation.title);
+    const title = createElement("h5", "", simulation.title);
     const description = createElement("p", "", simulation.description);
     const action = createElement("span", "card-action", "進入模擬器");
     body.append(meta, title, description, action);
@@ -282,7 +329,8 @@
     handle.type = "button";
     handle.setAttribute("aria-label", handleLabel);
     handle.title = "拖曳排序；也可使用旁邊的上下移動按鈕";
-    const peers = applyCardOrder(simulations, cardOrder).filter(item => item.topic === simulation.topic);
+    const peers = applyCardOrder(simulations, cardOrder).filter(item =>
+      item.topic === simulation.topic && item.subtopic === simulation.subtopic);
     const position = peers.findIndex(item => item.href === simulation.href);
     controls.append(handle);
     for (const direction of [-1, 1]) {
@@ -297,6 +345,7 @@
     article.prepend(controls);
     article.dataset.sortHref = simulation.href;
     article.dataset.sortTopic = simulation.topic;
+    article.dataset.sortSubtopic = simulation.subtopic;
     article.querySelector("a").draggable = false;
     article.querySelector("img").draggable = false;
     let dragStart = null, dropTarget = null;
@@ -315,7 +364,9 @@
       article.classList.toggle("is-dragging", moving);
       document.querySelectorAll(".drop-target").forEach(card => card.classList.remove("drop-target"));
       const target = document.elementFromPoint(event.clientX, event.clientY)?.closest("[data-sort-href]");
-      dropTarget = moving && target && target !== article && target.dataset.sortTopic === simulation.topic ? target : null;
+      dropTarget = moving && target && target !== article
+        && target.dataset.sortTopic === simulation.topic
+        && target.dataset.sortSubtopic === simulation.subtopic ? target : null;
       dropTarget?.classList.add("drop-target");
     });
     handle.addEventListener("pointerup", event => {
@@ -362,7 +413,7 @@
 
   function matchesSearch(simulation, query) {
     if (!query) return true;
-    return [simulation.title, simulation.description, simulation.topic, ...simulation.tags]
+    return [simulation.title, simulation.description, simulation.topic, simulation.subtopic, ...simulation.tags]
       .join(" ")
       .toLocaleLowerCase("zh-Hant")
       .includes(query);
@@ -388,14 +439,20 @@
         title.id = `topic-${topic}`;
         heading.append(title, createElement("span", "", `${items.length} 個模擬`));
 
-        const grid = createElement("div", "simulation-grid");
-        grid.append(...items.map(createCard));
         section.setAttribute("aria-labelledby", title.id);
         section.append(heading);
-        if (topic === "DSE問題") {
-          section.append(createElement("p", "topic-subtitle", "從試題出發，用互動模擬理解物理概念與解題思路。"));
+        for (const [subtopic, cards] of groupBySubtopic(items)) {
+          const subgroup = createElement("section", "subtopic-section");
+          const subheading = createElement("div", "subtopic-heading");
+          const subtitle = createElement("h4", "", subtopic);
+          subtitle.id = `subtopic-${topic}-${subtopic}`;
+          subheading.append(subtitle, createElement("span", "", `${cards.length} 個模擬`));
+          const grid = createElement("div", "simulation-grid");
+          grid.append(...cards.map(createCard));
+          subgroup.setAttribute("aria-labelledby", subtitle.id);
+          subgroup.append(subheading, grid);
+          section.append(subgroup);
         }
-        section.append(grid);
         return section;
       });
 
