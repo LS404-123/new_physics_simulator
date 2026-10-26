@@ -1,0 +1,88 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>一 mol 有多少？｜氣體粒子計數</title>
+<link rel="stylesheet" href="../HEAT/thermometer-calibration-slope/katex/katex.min.css">
+<script defer src="../HEAT/thermometer-calibration-slope/katex/katex.min.js"></script>
+<script defer src="model.js"></script>
+<script defer src="app.js"></script>
+<style>
+:root{--paper:#f6fafb;--ink:#203f50;--muted:#536d7a;--line:#c9dce3;--accent:#247b9d;--warm:#a95530;--night:#183442;--particle:#b9e8e7}
+*{box-sizing:border-box}html,body{margin:0;width:100%;height:100%;color:var(--ink);background:#e7eff3}
+body{display:grid;place-items:center;font-family:"Segoe UI","Microsoft JhengHei",sans-serif}
+button,input,a{-webkit-tap-highlight-color:transparent}button,input{font:inherit}button,a{touch-action:manipulation}
+button{min-height:44px;border:1px solid var(--line);border-radius:8px;padding:0 14px;background:white;color:var(--ink);cursor:pointer}
+button:disabled{opacity:.42;cursor:default}button[aria-pressed=true]{background:var(--ink);border-color:var(--ink);color:white}
+button.primary{background:var(--accent);color:white;border-color:var(--accent)}
+@media(hover:hover){button:not(:disabled):hover{filter:brightness(.94)}}
+:focus-visible{outline:3px solid var(--warm);outline-offset:3px}::selection{background:#c6e7ee;color:var(--ink)}
+[hidden]{display:none!important}h1,h2,h3,p{margin:0}.katex{font-size:1.05em}
+.app{width:1140px;height:768px;padding:max(0px,env(safe-area-inset-top)) max(0px,env(safe-area-inset-right)) max(0px,env(safe-area-inset-bottom)) max(0px,env(safe-area-inset-left));display:grid;grid-template-rows:68px 78px minmax(0,1fr) 64px;background:var(--paper)}
+.topbar{display:flex;align-items:center;gap:20px;padding:0 24px;border-bottom:1px solid var(--line)}h1{font-size:25px;font-weight:650}.topbar p{font-size:14px;color:var(--muted)}
+.topbar a{margin-left:auto;display:flex;align-items:center;gap:8px;min-height:44px;padding:0 10px;font-size:14px;color:var(--ink);text-decoration:none}.topbar svg{width:18px;height:18px;fill:none;stroke:currentColor;stroke-width:1.7}
+.steps{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;padding:15px 24px}.steps button{display:flex;align-items:center;gap:12px;text-align:left;font-size:15px;font-weight:600}.steps .number{font-variant-numeric:tabular-nums;font-size:13px;opacity:.8}
+.workspace{min-height:0;display:grid;grid-template-columns:minmax(0,1fr) 326px;gap:24px;padding:0 24px}
+.experiment{min-width:0;min-height:0;display:grid;grid-template-rows:52px minmax(0,1fr) 118px;background:var(--night);color:#f3fbfb;border-radius:12px}
+.scene-head{display:flex;align-items:center;justify-content:space-between;padding:0 20px;gap:12px}.scene-head h2{font-size:15px;font-weight:500}.scene-head span{color:#bcd5df;font-size:13px}
+.gas-wrap{position:relative;min-height:0;margin:0 20px;border:1px solid #668390;border-radius:5px}canvas{display:block;width:100%;height:100%}
+.scene-note{position:absolute;inset:auto 12px 10px;text-align:center;color:#c6dfe7;font-size:12px;pointer-events:none}
+.reading{padding:15px 20px 12px;display:grid;grid-template-columns:1fr auto;align-content:center;gap:8px 14px}
+.reading-label{font-size:13px;color:#bcd5df}.reading-value{font-size:35px;line-height:1.25;grid-column:1;min-width:0}.reading-value .katex{font-size:.96em}.reading-value small{font-size:15px;margin-left:8px}
+.amount-readout{grid-column:2;grid-row:1/3;align-self:center;font-size:22px;color:var(--particle);text-align:right}.full-count{font-size:13px;letter-spacing:.035em;font-variant-numeric:tabular-nums;color:#bcd5df;grid-column:1/-1}
+.lesson{min-width:0;min-height:0;display:flex;flex-direction:column;padding:3px 0 0}.lesson h2{font-size:24px;line-height:1.35;letter-spacing:.01em}.intro{font-size:15px;line-height:1.7;margin-top:9px;color:var(--muted);min-height:52px}
+.controls{margin-top:18px}.control-row{display:flex;align-items:center;gap:9px}.control-row button{flex:1}.control-row output{font-size:22px;text-align:center;min-width:54px;font-variant-numeric:tabular-nums}.control-caption{font-size:13px;color:var(--muted);margin-top:8px;line-height:1.5}
+.range-label{display:flex;justify-content:space-between;font-size:14px;align-items:center}.range-label output{font-size:21px;font-weight:600}input[type=range]{width:100%;height:44px;accent-color:var(--accent);margin:4px 0 0;cursor:pointer}.range-ends{display:flex;justify-content:space-between;font-size:12px;color:var(--muted);margin-top:-4px}
+.view-actions{display:flex;gap:8px;margin-top:14px}.view-actions button{flex:1;font-size:13px;padding:0 8px}
+.evidence{border-top:1px solid var(--line);margin-top:22px;padding-top:16px}.evidence h3{font-size:14px;color:var(--muted);font-weight:500}.equation{font-size:23px;margin:12px 0}.evidence p{font-size:14px;line-height:1.7}.unit-pair{display:flex;justify-content:space-between;align-items:baseline;gap:8px;margin:12px 0;font-size:15px}.unit-pair strong{font-size:19px;font-weight:600}
+.legend{margin-top:auto;padding-top:14px;font-size:12px;line-height:1.6;color:var(--muted)}.legend-line{display:flex;align-items:center;gap:8px}.dot-key{width:12px;height:12px;flex:none;display:inline-block;border-radius:50%;background:var(--accent)}.schematic .dot-key{background:transparent;border:2px solid var(--accent)}
+.graph{width:100%;height:172px;display:block;margin-top:5px}.graph text{font:12px "Segoe UI","Microsoft JhengHei",sans-serif;fill:var(--muted)}.graph .axis{stroke:#7f99a5;fill:none}.graph .grid{stroke:#dce7eb;fill:none}.graph .curve{stroke:var(--accent);stroke-width:2.5;fill:none}.graph .guide{stroke:var(--accent);stroke-dasharray:4 4;fill:none}.graph .point{fill:var(--accent);stroke:white;stroke-width:2}
+.footer{display:flex;align-items:center;gap:12px;padding:8px 24px}.footer .footnote{display:flex;align-items:center;gap:12px;font-size:11px;line-height:1.6;color:var(--muted);margin-right:auto}.footnote a{display:inline-flex;align-items:center;min-height:44px;color:var(--muted);text-underline-offset:3px}.footer button{font-size:13px}.next{min-width:185px}
+.lesson[data-step="3"] .controls{margin-top:10px}.lesson[data-step="3"] .view-actions{margin-top:8px}
+.lesson[data-step="3"] .evidence{display:grid;grid-template-columns:1fr auto;align-items:center;margin-top:14px;padding-top:10px}
+.lesson[data-step="3"] .equation{margin:0;font-size:21px}.lesson[data-step="3"] .evidence p{grid-column:1/-1;font-size:13px;margin-top:7px;line-height:1.5}
+.lesson[data-step="3"] .graph{grid-column:1/-1;height:144px}.lesson[data-step="3"] .legend{padding-top:8px}
+@media(max-width:1139px),(max-height:767px){.app{width:min(1140px,100vw);height:100svh;grid-template-rows:60px 70px minmax(0,1fr) 60px}.workspace{gap:18px;padding-inline:18px;grid-template-columns:minmax(0,1fr) 310px}.steps{padding:11px 18px}.topbar,.footer{padding-inline:18px}.experiment{grid-template-rows:48px minmax(0,1fr) 108px}.evidence{margin-top:16px;padding-top:12px}.controls{margin-top:12px}.reading-value{font-size:30px}.lesson h2{font-size:22px}.graph{height:153px}}
+@media(orientation:portrait){.app{width:100vw;height:100svh;grid-template-rows:64px 78px minmax(0,1fr) 64px}.workspace{grid-template-columns:1fr;grid-template-rows:minmax(250px,1fr) 360px;gap:18px}.lesson{display:grid;grid-template-columns:1fr 1fr;grid-template-rows:auto 1fr auto;column-gap:28px}.lesson>header{grid-column:1}.controls{grid-column:1;grid-row:2}.view-actions{align-self:start}.evidence{grid-column:2;grid-row:1/3;margin:0;padding:0 0 0 24px;border-top:0;border-left:1px solid var(--line)}.legend{grid-column:1/-1;grid-row:3;margin:0;padding-top:10px}.graph{height:175px}.experiment{grid-template-rows:48px minmax(0,1fr) 108px}.topbar p{display:none}.intro{min-height:0}.steps button{padding-inline:10px;gap:8px}.steps{padding-inline:18px}}
+@media(orientation:portrait) and (max-width:540px){.app{grid-template-rows:54px 64px minmax(0,1fr) 58px}.topbar{padding-inline:12px}h1{font-size:20px}.steps{gap:5px;padding:9px 10px}.steps button{font-size:12px;padding:4px;justify-content:center;gap:4px}.workspace{padding-inline:10px;gap:12px;grid-template-rows:minmax(180px,1fr) 330px}.lesson{column-gap:12px}.lesson h2{font-size:18px}.intro,.evidence p{font-size:12px;line-height:1.5}.evidence{padding-left:12px}.equation{font-size:17px}.controls{margin-top:9px}.control-row{gap:5px}.control-row button{padding-inline:6px;font-size:12px}.control-row output{min-width:30px;font-size:18px}.view-actions{gap:5px;margin-top:8px}.view-actions button{font-size:11px;padding-inline:4px}.unit-pair{display:block;font-size:12px}.unit-pair strong{font-size:16px;display:block;margin-top:7px}.graph{height:155px}.legend{font-size:11px}.legend-line{gap:5px}.experiment{grid-template-rows:40px minmax(0,1fr) 94px}.scene-head{padding-inline:12px}.scene-head span{font-size:11px}.gas-wrap{margin-inline:12px}.reading{padding:8px 12px;gap:5px}.reading-value{font-size:24px}.amount-readout{font-size:17px}.full-count{font-size:11px;letter-spacing:0}.footer{padding-inline:10px;gap:6px}.footer button{font-size:11px;padding-inline:8px}.footer .footnote{font-size:11px}.next{min-width:120px}.scene-note{font-size:11px}}
+</style>
+</head>
+<body>
+<main class="app">
+  <header class="topbar"><h1>一 mol 有多少？</h1><p>從數一粒，走到數一大批。</p><a href="../index.html"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>目錄</a></header>
+  <nav class="steps" aria-label="學習步驟">
+    <button data-step="0" aria-pressed="true"><span class="number">1</span>逐粒數</button>
+    <button data-step="1" aria-pressed="false"><span class="number">2</span>一批一批數</button>
+    <button data-step="2" aria-pressed="false"><span class="number">3</span>認識 1 mol</button>
+    <button data-step="3" aria-pressed="false"><span class="number">4</span>改變 mol 數</button>
+  </nav>
+  <div class="workspace">
+    <section class="experiment" aria-labelledby="gas-title">
+      <header class="scene-head"><h2 id="gas-title">氦氣 · He 原子</h2><span id="view-label">逐粒表示</span></header>
+      <div class="gas-wrap"><canvas id="gas" role="img" aria-label="容器內的氦氣原子"></canvas><p class="scene-note" id="scene-note">每個實心點是一粒氦原子。</p></div>
+      <div class="reading" aria-live="polite" aria-atomic="true"><span class="reading-label">氦原子總數 N</span><div class="reading-value"><span id="count"></span><small>粒</small></div><div class="amount-readout" id="amount"></div><p class="full-count" id="full-count"></p></div>
+    </section>
+    <section class="lesson" aria-labelledby="lesson-title">
+      <header><h2 id="lesson-title"></h2><p class="intro" id="intro"></p></header>
+      <div class="controls">
+        <div id="small-controls"><div class="control-row"><button id="remove">減少 1 粒</button><output id="small-amount"></output><button id="add">加入 1 粒</button></div><p class="control-caption" id="control-caption"></p></div>
+        <div id="mole-controls" hidden><label class="range-label" for="moles">物質的量 <span id="n-symbol"></span><output id="mole-amount" for="moles"></output></label><input id="moles" type="range" min="1" max="8" value="4" step="1" aria-valuetext="1 mol"><div class="range-ends"><span>0.25 mol</span><span>2 mol</span></div></div>
+        <div id="definition" hidden><div class="unit-pair"><span>每 1 打</span><strong>12 粒</strong></div><div class="unit-pair"><span>每 1 mol</span><strong id="definition-count"></strong></div><p class="control-caption">都是按固定數目來計數，只是每一份的數量不同。</p></div>
+        <div class="view-actions"><button id="arrange" aria-pressed="false">排好數一數</button><button id="pause" aria-pressed="false">暫停運動</button></div>
+      </div>
+      <div class="evidence"><h3 id="evidence-title"></h3><div class="equation" id="equation"></div><p id="evidence-text"></p>
+        <svg class="graph" id="graph" viewBox="0 0 310 180" role="img" aria-labelledby="graph-title" hidden>
+          <title id="graph-title">粒子數與物質的量成正比</title>
+          <text x="40" y="14">N / 10²³</text><path class="grid" d="M45 82H280M45 24H280M162.5 24V140M280 24V140"/><path class="axis" d="M45 22V140H288"/>
+          <text x="37" y="144" text-anchor="end">0</text><text x="37" y="86" text-anchor="end">6.02</text><text x="37" y="28" text-anchor="end">12.04</text><text x="45" y="158" text-anchor="middle">0</text><text x="162.5" y="158" text-anchor="middle">1</text><text x="280" y="158" text-anchor="middle">2</text><text x="280" y="176" text-anchor="end">n / mol</text>
+          <path id="graph-line" class="curve"/><path id="graph-guide" class="guide"/><circle id="graph-point" class="point" r="5"/>
+        </svg>
+      </div>
+      <div class="legend" id="legend"><div class="legend-line"><span class="dot-key" aria-hidden="true"></span><span id="legend-text"></span></div><p id="representation-note"></p></div>
+    </section>
+  </div>
+  <footer class="footer"><p class="footnote"><span>計數模型 · 尺寸及運動為示意</span><a href="https://www.bipm.org/en/si-base-units/mole" target="_blank" rel="noopener noreferrer">mol 的 SI 定義</a></p><button id="reset">重新開始</button><button id="previous">上一步</button><button class="primary next" id="next">試試一批一批數</button></footer>
+</main>
+</body>
+</html>

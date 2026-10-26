@@ -144,6 +144,14 @@
       href: "./gas-laws/index.html",
       image: "./gas-laws/preview.png",
       tags: ["氣體定律", "波以耳", "查理", "壓力定律", "壓強", "體積", "絕對溫度", "K", "攝氏", "p–V", "V–T", "p–T", "Boyle", "Charles", "gas laws"]
+    },
+    {
+      title: "一 mol 有多少？氣體粒子計數",
+      description: "從逐粒數氦原子、一打 12 粒，逐步認識 1 mol 的粒子數；改變 mol 數，觀察總粒子數與圖像同步變化。",
+      topic: "熱與氣體",
+      href: "./gas-mole/index.html",
+      image: "./gas-mole/preview.png",
+      tags: ["mol", "摩爾", "物質的量", "粒子數", "阿伏伽德羅常數", "氦氣", "計數", "mole"]
     }
   ];
 
