@@ -1,0 +1,34 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>理想氣體：省掉了甚麼？</title>
+  <script defer src="model.js"></script>
+  <script defer src="app.js"></script>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <main class="app">
+    <header><h1>理想氣體：省掉了甚麼？</h1><a href="../../index.html">返回目錄</a></header>
+    <section class="comparison" aria-label="氣體模型比較">
+      <article class="scene real">
+        <div class="scene-title"><h2>有分子間作用</h2><strong id="pairs"></strong></div>
+        <svg id="real-scene" viewBox="-10 -10 490 320" role="group" aria-label="分子之間的彎曲連接帶示意相互作用"></svg>
+        <div class="readout"><div class="energy"><span>動能</span><div class="track"><div id="real-kinetic" class="fill kinetic"></div></div></div><div class="energy"><span>分子間勢能的大小</span><div class="track"><div id="real-potential" class="fill potential"></div></div></div><p class="note">顏色區分分子對，粗幼示意吸引勢能大小；能量條共用固定刻度。</p></div>
+      </article>
+      <article class="scene ideal">
+        <div class="scene-title"><h2>理想氣體</h2><strong>忽略分子間勢能</strong></div>
+        <svg id="ideal-scene" viewBox="-10 -10 490 320" role="group" aria-label="沒有分子間作用的理想氣體示意"></svg>
+        <div class="readout"><div class="energy"><span>動能</span><div class="track"><div id="ideal-kinetic" class="fill kinetic"></div></div></div><div class="energy"><span>分子間勢能的大小</span><div class="track"><div class="zero">無</div></div></div><p class="note">分子體積忽略。低密度、較高溫時通常較接近真實氣體。<a href="https://openstax.org/books/chemistry/pages/9-6-non-ideal-gas-behavior" target="_blank" rel="noopener noreferrer">資料來源</a></p></div>
+      </article>
+    </section>
+    <section class="controls" aria-label="調整模型">
+      <label for="count"><span>分子數目 <output id="count-out"></output></span><input id="count" type="range" min="0" max="4" step="1" value="0"></label>
+      <label for="size"><span>容器大小 <output id="size-out">邊長 ×1.0</output></span><input id="size" type="range" min="1" max="8" step="0.1" value="1" aria-valuetext="容器邊長為原來的 1.0 倍"></label>
+      <label for="kinetic"><span>每粒動能 <span>較低　↔　較高</span></span><input id="kinetic" type="range" min="0.5" max="4" step="0.1" value="2"></label>
+    </section>
+    <p class="model-note">兩邊由相同狀態開始，碰撞均完全彈性；只有左邊有分子間吸引。拖動只影響選定的一邊；改變數目或容器大小會重新排列。</p>
+  </main>
+</body>
+</html>

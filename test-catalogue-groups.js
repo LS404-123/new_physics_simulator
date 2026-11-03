@@ -38,7 +38,7 @@ for (const topic of new Set(simulations.map(item => item.topic))) {
   });
 }
 
-assert.deepEqual(groupBySubtopic(simulations).map(([, cards]) => cards.length), [6, 4, 3, 5]);
+assert.deepEqual(groupBySubtopic(simulations).map(([, cards]) => cards.length), [6, 4, 3, 6]);
 const dseGroups = groupBySubtopic(simulations.filter(item => item.topic === "DSE問題"));
 assert.deepEqual(dseGroups.map(([name, cards]) => [name, cards.map(item => item.href)]), [
   ["溫度、熱和內能", ["./HEAT/resistance-thermometer-graph/index.html"]],

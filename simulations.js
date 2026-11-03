@@ -195,6 +195,15 @@
       href: "./HEAT/basketball-pressure/index.html",
       image: "./HEAT/basketball-pressure/preview.png",
       tags: ["DSE問題", "籃球", "打氣", "活塞", "氣體", "壓強", "體積", "恆溫", "粒子", "碰撞", "撞壁", "2014", "120", "156", "打氣次數"]
+    },
+    {
+      title: "理想氣體：省掉了甚麼？",
+      description: "放大容器、調整動能，對照有分子間吸引與理想氣體的運動和能量變化。",
+      topic: "熱和氣體",
+      subtopic: "氣體",
+      href: "./HEAT/ideal-gas-energy/index.html",
+      image: "./HEAT/ideal-gas-energy/preview.png",
+      tags: ["理想氣體", "分子", "分子間作用", "勢能", "動能", "內能", "近似", "容器", "彈性碰撞", "稀薄"]
     }
   ];
 
