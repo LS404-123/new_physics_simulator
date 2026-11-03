@@ -204,6 +204,15 @@
       href: "./HEAT/ideal-gas-energy/index.html",
       image: "./HEAT/ideal-gas-energy/preview.png",
       tags: ["理想氣體", "分子", "分子間作用", "勢能", "動能", "內能", "近似", "容器", "彈性碰撞", "稀薄"]
+    },
+    {
+      title: "理想氣體：從分子看 P、V、T",
+      description: "觀察分子運動與撞壁，用乘積色塊連繫撞擊頻率、每次動量轉變及壓強；直接調整體積與溫度，讓學生口述變化。",
+      topic: "熱和氣體",
+      subtopic: "氣體",
+      href: "./HEAT/kinetic-gas/index.html",
+      image: "./HEAT/kinetic-gas/preview.png",
+      tags: ["理想氣體", "分子運動論", "PVT", "定溫", "定容", "定壓", "壓強", "體積", "絕對溫度", "碰撞", "動量", "平均動能"]
     }
   ];
 

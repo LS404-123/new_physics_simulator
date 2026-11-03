@@ -1,0 +1,101 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>理想氣體：從分子看 P、V、T</title>
+  <link rel="stylesheet" href="style.css">
+  <script defer src="../gas-laws/model.js"></script>
+  <script defer src="model.js"></script>
+  <script defer src="app.js"></script>
+</head>
+<body>
+<main class="app">
+  <header class="topbar">
+    <h1>理想氣體：從分子看 P、V、T</h1>
+    <a href="../../index.html"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m10 6-6 6 6 6M4 12h16"/></svg>返回目錄</a>
+  </header>
+  <div class="workspace">
+    <section class="scene-panel" aria-labelledby="scene-title">
+      <div class="scene-heading"><h2 id="scene-title">分子運動</h2><span>氣體量保持不變</span></div>
+      <div class="scene-body">
+      <div class="scene-wrap">
+        <svg id="scene" viewBox="0 0 1000 400" role="img" aria-labelledby="scene-title scene-description">
+          <desc id="scene-description">代表分子在容器內無規運動，撞壁時反射。橙色左壁短線顯示實際碰撞位置及傳給壁面的動量，虛線表示起始容器。</desc>
+          <defs>
+            <linearGradient id="chamber-glass" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#f5fcfd"/><stop offset="1" stop-color="#dcecf2"/></linearGradient>
+            <linearGradient id="piston-metal"><stop offset="0" stop-color="#527888"/><stop offset="0.45" stop-color="#d9e7ec"/><stop offset="1" stop-color="#7695a3"/></linearGradient>
+          </defs>
+          <rect id="reference-box" x="84" y="50" width="400" height="300"/>
+          <rect id="gas-space" x="84" y="50" width="400" height="300"/>
+          <path id="fixed-walls" d="M484 50H84V350H484"/>
+          <use href="#fixed-walls" class="wall-glint" aria-hidden="true"/>
+          <path id="left-wall" d="M84 50V350"/>
+          <g id="particles"></g>
+          <g id="collisions"></g>
+          <g id="piston"><rect class="piston-face" x="0" y="44" width="14" height="312" rx="3"/><path class="piston-rod" d="M14 200h50"/><rect class="piston-grip" x="58" y="173" width="12" height="54" rx="5"/><path class="piston-grooves" d="M61 183h6m-6 12h6m-6 12h6m-6 12h6"/></g>
+        </svg>
+      </div>
+      <aside class="comparison" aria-label="撞壁因素與壓強的關係">
+        <div id="pressure-comparison" class="pressure-result" role="img" aria-label="壓強：與起始相同">
+          <h2>壓強</h2>
+          <div class="comparison-track" aria-hidden="true"><div id="pressure-bar"></div><i></i></div>
+        </div>
+        <div class="product-link" aria-hidden="true"><svg viewBox="0 0 20 30"><path d="M10 27V4m-6 7 6-7 6 7"/></svg><span>兩項相乘</span></div>
+        <svg class="product-diagram" viewBox="0 0 260 220" role="group" aria-label="乘積圖：色塊闊度代表撞擊頻率，高度代表每次平均動量轉變，面積代表兩項乘積">
+          <rect id="product-area" x="44" y="78" width="36" height="80" aria-hidden="true"/>
+          <rect class="product-reference" x="44" y="78" width="36" height="80" aria-hidden="true"/>
+          <g id="frequency-comparison" role="img" aria-label="每秒撞擊次數：與起始相同">
+            <rect class="factor-track" x="44" y="174" width="208" height="10"/>
+            <rect id="frequency-bar" x="44" y="174" width="36" height="10"/>
+            <path class="factor-reference" d="M80 169v20"/>
+            <text x="44" y="211" class="frequency-label">每秒撞擊次數</text>
+          </g>
+          <g id="impulse-comparison" role="img" aria-label="每次平均動量轉變：與起始相同">
+            <rect class="factor-track" x="20" y="38" width="10" height="120"/>
+            <rect id="impulse-bar" x="20" y="78" width="10" height="80"/>
+            <path class="factor-reference" d="M15 78h20"/>
+            <text x="10" y="20" class="impulse-label">每次平均動量轉變</text>
+          </g>
+        </svg>
+        <p class="product-note">色塊面積表示兩項的乘積</p>
+        <p class="comparison-key">同一左壁，壁面面積不變；<br>灰線／虛線：起始狀態</p>
+      </aside>
+      </div>
+      <p class="scene-key">虛線：起始容器<span>橙色短線：撞壁傳遞的動量</span></p>
+    </section>
+    <section class="controls" aria-label="調整氣體狀態">
+      <div class="dual-sliders">
+        <div class="volume-control">
+          <label class="control-label" for="volume-input">體積</label>
+          <div class="slider-row"><span>較小</span><input id="volume-input" type="range" min="5" max="40" step="0.1" value="20" aria-label="改變體積" aria-valuetext="與起始相同"><span>較大</span></div>
+        </div>
+        <div class="temperature-control">
+          <label class="control-label" for="temperature-input">溫度</label>
+          <div class="slider-row"><span>較低</span><input id="temperature-input" type="range" min="150" max="600" step="1" value="300" aria-label="改變溫度" aria-valuetext="與起始相同"><span>較高</span></div>
+        </div>
+      </div>
+      <div class="control-actions">
+        <label class="pressure-lock"><input id="pressure-lock" type="checkbox">保持壓強</label>
+        <button id="play" type="button" aria-pressed="false">暫停分子</button>
+        <button id="reset" type="button">重設</button>
+      </div>
+    </section>
+  </div>
+  <footer class="footnote">
+    <span>分子以慢動作呈現</span>
+    <button type="button" popovertarget="model-notes">模型假設</button>
+  </footer>
+  <div id="model-notes" popover>
+    <h2>模型假設</h2>
+    <p>固定同一份理想氦氣；圓點代表大量分子，大小及數目不按實際比例。分子在三維空間運動，畫面為正面投影。</p>
+    <p>忽略分子體積及分子間作用，只計完全彈性撞壁。改變設定直接展示另一個平衡狀態，不模擬快速壓縮、活塞作功及熱交換過程。</p>
+    <p>勾選「保持壓強」後，體積與溫度按比例連動，調整範圍受另一項設定限制。滑桿刻度保持一致。</p>
+    <p>每秒撞擊次數乘以每次傳給壁面的平均垂直動量轉變，得到平均作用力，再除以壁面面積就是壓強。這裡觀察同一左壁，壁面面積保持不變。</p>
+    <p>乘積圖的闊度與高度分別跟兩個撞擊因素成正比，色塊面積及壓強條便跟兩者乘積成正比。灰線與虛線是起始參考，不顯示數值。</p>
+    <p>比較來自同一組粒子和容器尺寸的長時間平均，短時間的可見碰撞會有起伏。</p>
+    <button type="button" popovertarget="model-notes" popovertargetaction="hide">關閉</button>
+  </div>
+</main>
+</body>
+</html>
