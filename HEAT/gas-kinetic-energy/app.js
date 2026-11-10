@@ -1,9 +1,9 @@
 (() => {
   "use strict";
   const $ = id => document.getElementById(id);
-  const { create, createComparisonBox, setControls, readings, advance, defaults, impactWindow } = GasEnergy;
+  const { create, createMixedBox, countedSquares, setControls, readings, advance, defaults, impactWindow } = GasEnergy;
   const motion = matchMedia("(prefers-reduced-motion: reduce)");
-  let freeBox = create(), state = freeBox, samples = null, seenMixed = false;
+  let freeBox = create(), state = freeBox;
   let paused = motion.matches, frame = 0, lastTime = null;
   $("chamber").innerHTML = chamberArt.svg;
   function svgNode(name, attrs) {
@@ -64,7 +64,7 @@
     if ($("hit-count").textContent !== count) $("hit-count").textContent = count;
   }
   function drawParticles() {
-    if (samples) { drawWall(state, samples, seenMixed); return; }
+    if (state.speedGroups) { drawWall(state, Number($("included").value)); return; }
     const layer = $("particles");
     const order = state.particles.map((p, i) => {
       const [x, y] = project(p);
@@ -106,39 +106,39 @@
         : "分子速率" + (up ? "上升" : "下降") + "，速率平方的平均值及壓強都" + direction + "。";
     } else $("feedback").textContent = "速率不變，增加粒子會怎樣影響撞壁？";
   }
-  function showComparison() {
-    const mixed = state === samples.b;
-    $("sample-a").setAttribute("aria-pressed", String(!mixed));
-    $("sample-b").setAttribute("aria-pressed", String(mixed));
-    $("scene-title").textContent = (mixed ? "B 箱" : "A 箱") + " · 氣箱正視圖";
-    const groups = state.speedGroups;
-    $("atom-label").textContent = groups[groups.length - 1].speed + " m/s";
-    $("slow-key").hidden = !mixed;
+  function showCountedParticles(data) {
+    const slider = $("included"), count = Number(slider.value);
+    const { groups, sum, meanSquare } = countedSquares(state, count);
+    const number = n => Math.round(n).toLocaleString("en-GB");
+    $("scene-title").textContent = "B 箱 · 24 粒氦原子";
+    $("atom-label").textContent = groups[1].speed + " m/s";
+    $("slow-key").hidden = false;
     $("slow-label").textContent = groups[0].speed + " m/s";
-    const a = readings(samples.a), b = readings(samples.b);
-    for (const [id, data] of [["a", a], ["b", b]]) {
-      const reveal = id === "a" || seenMixed;
-      $(id + "-speeds").textContent = samples[id].speedGroups.map(group => group.speed).join("、");
-      $(id + "-mean").textContent = Math.round(data.meanSpeed);
-      $(id + "-square").textContent = reveal ? Math.round(data.meanSquare).toLocaleString("en-GB") : "待觀察";
-      $(id + "-pressure").textContent = reveal ? (data.pressure / 1000).toFixed(2) : "待觀察";
+    $("included-out").textContent = count + " / " + data.count;
+    slider.setAttribute("aria-valuetext", "全箱 " + data.count + " 粒中已計入 " + count + " 粒");
+    slider.style.setProperty("--pct", 100 * count / data.count + "%");
+    groups.forEach((g, i) => {
+      const id = i === 0 ? "slow" : "fast";
+      $(id + "-speed").textContent = g.speed;
+      $(id + "-included").textContent = g.included + " / " + g.count;
+      $(id + "-sum").textContent = number(g.sum);
+    });
+    if (meanSquare === null) {
+      $("sample-calculation").textContent = "計入第一粒後即可取平均。";
+    } else {
+      const numerator = groups.map(g => g.included + "\\times " + g.speed + "^2").join("+");
+      const sign = Math.abs(meanSquare - Math.round(meanSquare)) < 1e-6 ? "=" : "\\approx";
+      katex.render("\\dfrac{" + numerator + "}{" + count + "}" + sign + number(meanSquare).replaceAll(",", "\\,")
+        + "\\;\\mathrm{m^2/s^2}", $("sample-calculation"));
     }
-    const sum = groups.map(g => g.count + "\\times " + g.speed + "^2").join("+");
-    const meanSquare = Math.round((mixed ? b : a).meanSquare).toLocaleString("en-GB").replaceAll(",", "\\,");
-    katex.render("\\overline{c^2}=\\dfrac{" + sum + "}{" + state.particles.length + "}=" + meanSquare,
-      $("sample-calculation"));
-    const percent = Math.round(100 * (b.pressure / a.pressure - 1));
-    $("feedback").textContent = seenMixed
-      ? "兩箱平均速率相同。B 箱的平均平方速率及長時間平均壓強都比 A 箱高 " + percent + "%。"
-      : "兩箱的平均速率相同。先預測壓強，再選 B 箱觀察。";
-    if (seenMixed && observationDone()) {
-      const summary = box => box.wallTransfers.length + " 次（" + (GasEnergy.wallReading(box).pressure / 1000).toFixed(2) + " kPa）";
-      $("feedback").textContent = "100 ps 內，A 箱撞右壁 " + summary(samples.a) + "，B 箱撞右壁 " + summary(samples.b) + "。";
-    }
+    $("box-pressure").textContent = (data.pressure / 1000).toFixed(2);
+    $("sum-note").textContent = count === data.count
+      ? "全部計入後，" + data.count + " × " + number(meanSquare) + " = " + number(sum) + "，剛好等於逐粒相加的平方總和。快粒子佔這個總和的 " + Math.round(100 * groups[1].sum / sum) + "%。"
+      : "還有 " + (data.count - count) + " 粒未計入。拖動滑桿，看看它們怎樣改變平均值。";
   }
   function render(previous = null) {
     const data = readings(state);
-    if (samples) showComparison();
+    if (state.speedGroups) showCountedParticles(data);
     else {
       $("scene-title").textContent = "分子觀察室";
       $("atom-label").textContent = "氦原子";
@@ -153,39 +153,30 @@
     }
     drawParticles();
   }
-  function startComparison() {
-    samples = { a: createComparisonBox(false), b: createComparisonBox(true) };
-    state = samples.a;
-    seenMixed = false;
+  function startMixedBox() {
+    state = createMixedBox();
+    $("included").max = $("included").value = state.particles.length;
   }
   function syncMode() {
     const comparing = location.hash === "#mean-square";
-    if (comparing === Boolean(samples)) return;
-    if (comparing) startComparison();
-    else { samples = null; state = freeBox; }
+    if (comparing === Boolean(state.speedGroups)) return;
+    if (comparing) startMixedBox();
+    else state = freeBox;
     $("compare").setAttribute("aria-expanded", String(comparing));
-    $("compare").textContent = comparing ? "返回自由調整" : "比較平均速率";
+    $("compare").textContent = comparing ? "返回自由調整" : "逐粒計算平均值";
     $("free-settings").hidden = $("free-readings").hidden = comparing;
-    $("comparison-settings").hidden = $("average-step").hidden = !comparing;
-    $("collision-reason").hidden = $("wall-study").hidden = $("wall-arrow-key").hidden = !comparing;
+    $("count-settings").hidden = $("average-step").hidden = $("study-pressure").hidden = !comparing;
+    $("count-key").hidden = $("wall-study").hidden = $("wall-arrow-key").hidden = !comparing;
+    document.querySelector(".relation .legend").hidden = $("feedback").hidden = comparing;
     $("chamber").toggleAttribute("hidden", comparing);
     $("all-hits").hidden = $("hit-key").hidden = comparing;
     lastTime = null;
     render();
     playback();
   }
-  $("compare").addEventListener("click", () => { location.hash = samples ? "" : "mean-square"; });
+  $("compare").addEventListener("click", () => { location.hash = state.speedGroups ? "" : "mean-square"; });
   window.addEventListener("hashchange", syncMode);
-  for (const id of ["a", "b"]) {
-    $("sample-" + id).addEventListener("click", () => {
-      if (state === samples[id]) return;
-      const previous = readings(state);
-      state = samples[id];
-      if (id === "b") seenMixed = true;
-      lastTime = null;
-      render(previous);
-    });
-  }
+  $("included").addEventListener("input", () => render());
   for (const id of ["speed", "count"]) {
     $(id).addEventListener("input", () => {
       const count = Number($("count").value), speed = Number($("speed").value);
@@ -197,42 +188,27 @@
   }
   function tick(time) {
     if (lastTime !== null) {
-      const dt = Math.min(0.1, (time - lastTime) * (samples ? 0.00095 : 0.00025));
-      if (samples) {
-        advance(samples.a, dt);
-        advance(samples.b, dt);
-      } else advance(state, dt);
+      const dt = Math.min(0.1, (time - lastTime) * (state.speedGroups ? 0.00095 : 0.00025));
+      advance(state, dt);
     }
     lastTime = time;
     drawParticles();
-    if (observationDone()) { showComparison(); playback(); }
-    else frame = requestAnimationFrame(tick);
-  }
-  function observationDone() {
-    return samples && state.time >= GasEnergy.observationPs * impactWindow;
+    frame = requestAnimationFrame(tick);
   }
   function playback() {
     cancelAnimationFrame(frame);
     lastTime = null;
-    const done = observationDone();
-    document.body.classList.toggle("paused", paused || done);
-    $("play-label").textContent = done ? "重播量度" : paused ? "播放" : "暫停";
-    $("run-status").textContent = done ? "量度完成" : paused ? "已暫停" : "慢鏡播放";
-    if (!paused && !done && !document.hidden) frame = requestAnimationFrame(tick);
+    document.body.classList.toggle("paused", paused);
+    $("play-label").textContent = paused ? "播放" : "暫停";
+    $("run-status").textContent = paused ? "已暫停" : "慢鏡播放";
+    if (!paused && !document.hidden) frame = requestAnimationFrame(tick);
   }
   $("play").addEventListener("click", () => {
-    if (observationDone()) {
-      const mixed = state === samples.b, reveal = seenMixed;
-      startComparison();
-      state = mixed ? samples.b : samples.a;
-      seenMixed = reveal;
-      paused = false;
-      render();
-    } else paused = !paused;
+    paused = !paused;
     playback();
   });
   $("reset").addEventListener("click", () => {
-    if (samples) startComparison();
+    if (state.speedGroups) startMixedBox();
     else {
       freeBox = state = create();
       $("speed").value = defaults.speed;

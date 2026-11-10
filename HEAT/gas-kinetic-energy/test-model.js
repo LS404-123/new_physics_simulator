@@ -30,42 +30,20 @@ for (const speed of [2, 0.5, 1]) {
 }
 assert.deepEqual(walls, new Set(["x-1", "x1", "y-1", "y1", "z-1", "z1"]));
 assert.throws(() => model.setControls(state, 1, 1), RangeError);
-const samples = [false, true].map(mixed => {
-  const box = model.createComparisonBox(mixed);
-  for (let i = 0; i < 50; i++) model.advance(box, 0.08);
-  return model.readings(box);
-});
-const [uniform, mixed] = samples;
-assert.equal(uniform.count, mixed.count);
-close(uniform.meanSpeed, 400);
-close(mixed.meanSpeed, uniform.meanSpeed);
-close(uniform.meanSquare, 400 ** 2);
-close(mixed.meanSquare, (12 * 200 ** 2 + 12 * 600 ** 2) / 24);
-close(mixed.pressure / uniform.pressure, 1.25);
-
-const meter = model.createComparisonBox(false);
-assert.equal(model.wallReading(meter).pressure, null);
-meter.particles = [
-  { x: meter.width - 0.06, y: 0.5, z: 0.5, vx: 1, vy: 0, vz: 0 },
-  { x: meter.width - 0.04, y: 0.5, z: 0.7, vx: 2, vy: 0, vz: 0 },
-  { x: 0.02, y: 0.5, z: 0.5, vx: -1, vy: 0, vz: 0 }
-];
-model.advance(meter, 0.1);
-const [first, second] = meter.wallTransfers;
-assert.equal(meter.wallTransfers.length, 2);
-assert.ok(first.ps < second.ps);
-const speedUnit = require("../kinetic-gas/model.js").SPEED_UNIT;
-close(first.impulse, 4 * model.mass * speedUnit);
-close(second.total, 6 * model.mass * speedUnit);
-const elapsedSeconds = 0.1 * Math.cbrt(model.volume) / (meter.width * speedUnit);
-close(model.wallReading(meter).pressure, second.total / (Math.cbrt(model.volume) ** 2 * elapsedSeconds));
-for (const useMixed of [false, true]) {
-  const box = model.createComparisonBox(useMixed);
-  for (let i = 0; i < 140; i++) model.advance(box, 0.1);
-  const result = model.wallReading(box);
-  close(result.ps, 100);
-  assert.ok(result.total > 0 && result.total < 1.5e-22, "階梯線須落在共用刻度之內");
-  model.advance(box, 0.1);
-  assert.deepEqual(model.wallReading(box), result);
+const box = model.createMixedBox();
+for (let i = 0; i < 50; i++) model.advance(box, 0.08);
+const beforeCounting = model.readings(box);
+assert.equal(model.countedSquares(box, 0).meanSquare, null);
+for (let count = 1; count <= 24; count++) {
+  const result = model.countedSquares(box, count);
+  const slow = Math.min(count, 12), fast = count - slow;
+  assert.deepEqual(result.groups.map(g => g.included), [slow, fast]);
+  close(result.meanSquare, (slow * 200 ** 2 + fast * 600 ** 2) / count);
 }
-console.log("通過：六面撞壁、均方速率、右壁衝量的次序及單位、100 ps 量度壓強。");
+const all = model.countedSquares(box, 24);
+close(all.sum, 4800000);
+close(all.meanSquare, beforeCounting.meanSquare);
+close(all.groups[1].sum / all.sum, 0.9);
+close(beforeCounting.pressure * model.volume, model.mass * all.sum / 3);
+assert.deepEqual(model.readings(box), beforeCounting);
+console.log("通過：三維撞壁、B 箱逐粒計數、快慢兩組的平方總和、全箱平均值與壓強。");

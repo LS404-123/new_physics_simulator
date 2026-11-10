@@ -22,35 +22,26 @@ input[type=range]{--pct:0%;width:100%;margin:0;height:44px;display:block;appeara
 .lab [hidden]{display:none}
 .actions #compare{padding-inline:12px}
 .atom-key.slow{background:#c6a3ff}
-.sample-note,#average-step p{color:var(--muted);font-size:14px;line-height:1.45}
-.sample-buttons{display:flex;gap:4px;margin:9px 0}
-.sample-buttons button{flex:1;min-height:44px;border:1px solid var(--line);border-radius:6px;background:#f5f6ec;color:var(--ink);font:inherit;font-size:14px;font-weight:650;cursor:pointer}
-.sample-buttons button[aria-pressed="true"]{color:white;background:var(--accent);border-color:var(--accent)}
-.samples{width:100%;border-collapse:collapse;font-size:14px;font-variant-numeric:tabular-nums}
-.samples th,.samples td{padding:3px 0;text-align:right}
+#average-step p,#study-pressure{color:var(--muted);font-size:14px;line-height:1.5}
+.samples{width:100%;margin-top:17px;border-collapse:collapse;font-size:15px;font-variant-numeric:tabular-nums}
+.samples th,.samples td{padding:6px 0;text-align:right}
 .samples th:first-child{text-align:left}
 .samples tbody th{font-weight:normal}
 .samples thead th{border-bottom:1px solid var(--line);color:var(--muted)}
 .samples small{font-size:11px;color:var(--muted)}
 .samples td{font-family:Consolas,monospace}
-#sample-calculation{margin:7px 0 10px;text-align:center;color:var(--accent);font-size:16px}
+.group-dot{display:inline-block;width:9px;height:9px;border-radius:50%;margin-right:7px}
+.slow-dot{background:#b493dc;border:1px solid #76638c}.fast-dot{background:#ffc783;border:1px solid #aa7938}
+#average-step{padding-block:13px}
+#sample-calculation{margin:12px 0;padding:12px 3px;text-align:center;color:var(--accent);background:#eef3e9;border-radius:6px;font-size:16px}
 #sample-calculation .katex{font-size:1em}
-#collision-reason{margin:0 19px 12px;padding-top:8px;border-top:1px solid #47605a;color:#d4e4dd;font-size:14px;line-height:1.4}
-aside:has(#comparison-settings:not([hidden])) .equation{margin-block:6px}
-@media(min-width:761px) and (max-height:720px){.sample-buttons{margin-block:4px}.samples th,.samples td{padding-block:1px}#comparison-settings h2,#average-step h2{margin-bottom:4px}}
+#count-key{margin:0 19px 12px;padding-top:8px;border-top:1px solid #47605a;color:#d4e4dd;font-size:14px;line-height:1.4}
+#study-pressure{text-align:center}#box-pressure{color:var(--ink);font-size:18px}
+aside:has(#count-settings:not([hidden])) .relation{border-top:1px solid var(--line);border-bottom:0}
+@media(min-width:761px) and (max-height:720px){.samples th,.samples td{padding-block:3px}#average-step{padding-block:6px}#sample-calculation{margin-block:6px}}
 @media(max-width:540px){header{align-items:flex-start;flex-wrap:wrap;gap:6px}.scene-foot{flex-wrap:wrap}}
-#wall-study{display:grid;min-height:0;grid-template-rows:minmax(0,1fr) auto;gap:4px;padding:3px 18px 8px}
+#wall-study{min-height:0;padding:3px 18px 8px}
 #chamber[hidden],#wall-study[hidden]{display:none}
 #flat-chamber{display:block;width:100%;height:100%;min-height:0}
 .normal-impulse{fill:none;stroke:#88ffe3;stroke-width:2.5;stroke-linecap:round;stroke-linejoin:round}
-.wall-chart{background:#f0f4e9;border:1px solid #b4c5b8;border-radius:7px;padding:9px 12px 7px;color:#173a34}
-.chart-heading,.wall-reading,.chart-key{display:flex;align-items:baseline;justify-content:space-between;gap:6px}
-.wall-chart h3{font-size:15px;font-weight:700;line-height:1.3;margin:0}.wall-chart small,.chart-key,.wall-reading{font-size:12px}
-.chart-key{gap:10px;white-space:nowrap}.chart-key span::before{content:"";display:inline-block;width:15px;border-top:3px solid #21645a;margin-right:3px;vertical-align:middle}
-.chart-key span:last-child::before{border-color:#ad4d22}
-#momentum-plot{display:block;width:100%;height:clamp(89px,14svh,115px);margin-block:4px}
-.chart-grid{fill:none;stroke:#b6c5b6;stroke-width:.8}.chart-labels{font:12px Consolas,"Microsoft JhengHei",sans-serif;text-anchor:end;fill:#37564c}
-.trace,#wall-secant{fill:none;vector-effect:non-scaling-stroke;stroke-width:1.8}.trace-a{stroke:#21645a}.trace-b{stroke:#ad4d22}
-#wall-secant{stroke:#494b5c;stroke-dasharray:5 4;stroke-width:1.2}
-.wall-reading{font-variant-numeric:tabular-nums}.wall-reading b{font-size:15px}
-@media(max-width:540px){.scene:has(#wall-study:not([hidden])){height:560px}#wall-study{padding-inline:9px}.chart-heading{flex-wrap:wrap}}
+@media(max-width:540px){#wall-study{padding-inline:9px}}

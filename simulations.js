@@ -216,7 +216,7 @@
     },
     {
       title: "分子撞壁與氣體壓強",
-      description: "調整分子速率與數目，觀察六面撞壁。以正視圖比較平均速率相同的兩箱氣體，由右壁累積收到的動量量度壓強。",
+      description: "調整分子速率與數目，觀察六面撞壁。在 B 箱逐粒計入快、慢粒子的速率平方，找出全箱平均平方速率與壓強的關係。",
       topic: "熱和氣體",
       subtopic: "氣體",
       href: "./HEAT/gas-kinetic-energy/index.html",

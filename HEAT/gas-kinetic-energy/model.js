@@ -5,8 +5,6 @@
   "use strict";
   const mass = 0.004 / 6.02214076e23;
   const volume = 1e-24;
-  const wallArea = Math.cbrt(volume) ** 2;
-  const observationPs = 100;
   // 把 1 ps 換算為撞壁模型的時間單位：實際邊長對應 gas.HEIGHT。
   const impactWindow = 1e-12 * gas.SPEED_UNIT * gas.HEIGHT / Math.cbrt(volume);
   const boltzmann = 1.380649e-23;
@@ -50,15 +48,15 @@
     state.hits = [];
   }
 
-  function createComparisonBox(mixed) {
+  function createMixedBox() {
     const state = create();
-    const speeds = mixed ? [200, 600] : [400];
+    const speeds = [200, 600];
     const perGroup = state.particles.length / speeds.length;
     state.speedGroups = speeds.map(speed => ({ speed, count: perGroup }));
-    state.wallTransfers = [];
     // 每半箱有三組完整的四面體方向，改速率後三軸均方分量仍相同。
     state.particles.forEach((p, i) => {
-      const speed = speeds[Math.floor(i / perGroup)];
+      p.group = Math.floor(i / perGroup);
+      const speed = speeds[p.group];
       const scale = speed / (gas.SPEED_UNIT * Math.hypot(p.vx, p.vy, p.vz));
       p.vx *= scale;
       p.vy *= scale;
@@ -67,25 +65,17 @@
     return state;
   }
 
-  function advance(state, dt) {
-    if (!state.wallTransfers) return gas.advance(state, dt);
-    const remaining = Math.max(0, observationPs * impactWindow - state.time);
-    const events = gas.advance(state, Math.min(dt, remaining));
-    // 同一時間步可有多粒撞壁，累積曲線要依撞擊時間排列。
-    const rightHits = events.filter(hit => hit.axis === "x" && hit.side === 1).sort((a, b) => a.time - b.time);
-    let total = state.wallTransfers.at(-1)?.total ?? 0;
-    for (const hit of rightHits) {
-      const impulse = hit.impulse * mass * gas.SPEED_UNIT;
-      total += impulse;
-      state.wallTransfers.push({ ps: hit.time / impactWindow, height: hit.z / state.width, impulse, total });
+  function countedSquares(state, count) {
+    if (!Number.isInteger(count) || count < 0 || count > state.particles.length) throw new RangeError("計入粒子數超出範圍");
+    const groups = state.speedGroups.map(group => ({ ...group, included: 0, sum: 0 }));
+    let sum = 0;
+    for (const p of state.particles.slice(0, count)) {
+      const square = (p.vx ** 2 + p.vy ** 2 + p.vz ** 2) * gas.SPEED_UNIT ** 2;
+      groups[p.group].included++;
+      groups[p.group].sum += square;
+      sum += square;
     }
-    return events;
-  }
-
-  function wallReading(state) {
-    const ps = state.time / impactWindow;
-    const total = state.wallTransfers.at(-1)?.total ?? 0;
-    return { ps, total, pressure: ps > 0 ? total / (ps * 1e-12 * wallArea) : null };
+    return { groups, sum, meanSquare: count ? sum / count : null };
   }
 
   function readings(state) {
@@ -98,5 +88,5 @@
     const pressure = mass * x2 * gas.SPEED_UNIT ** 2 / volume;
     return { count, meanSpeed, meanSquare, pressure, mean, total: count * mean, temperature: 2 * mean / (3 * boltzmann) };
   }
-  return { create, createComparisonBox, setControls, readings, advance, wallReading, defaults, mass, volume, wallArea, observationPs, impactWindow };
+  return { create, createMixedBox, countedSquares, setControls, readings, advance: gas.advance, defaults, mass, volume, impactWindow };
 });
