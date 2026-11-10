@@ -18,17 +18,19 @@
     <header>
       <div><nav aria-label="所在位置"><a href="../../index.html">‹　模擬器目錄</a><span>/</span>熱和氣體</nav>
         <h1>分子撞壁與氣體壓強</h1></div>
-      <div class="actions"><button id="play"><span class="play-icon" aria-hidden="true"></span><span id="play-label">暫停</span></button>
+      <div class="actions"><button id="compare" aria-controls="comparison-settings" aria-expanded="false">比較平均速率</button>
+        <button id="play"><span class="play-icon" aria-hidden="true"></span><span id="play-label">暫停</span></button>
         <button id="reset"><span class="reset-icon" aria-hidden="true">↺</span>重設</button></div>
     </header>
     <section class="bench" aria-label="三維氣箱及粒子設定">
       <section class="scene" aria-labelledby="scene-title">
         <div class="scene-heading"><h2 id="scene-title">分子觀察室</h2><span class="state"><i></i><span id="run-status">慢鏡播放</span></span></div>
-        <svg id="chamber" viewBox="58 34 404 410" role="img" aria-label="立方氣箱內的橙色氦原子向各方向運動。青綠色光圈在六面容器壁的實際撞點向外擴散。"></svg>
-        <div class="scene-foot"><span><i class="atom-key"></i>氦原子</span><span><i class="impact-key"></i>撞壁</span><span class="hit-count">六面合計 · 最近 1 皮秒 <b id="hit-count">0</b> 次</span></div>
+        <svg id="chamber" viewBox="58 34 404 410" role="img" aria-label="立方氣箱內的氦原子向各方向運動。青綠色光圈在六面容器壁的實際撞點向外擴散。"></svg>
+        <div class="scene-foot"><span><i class="atom-key"></i><span id="atom-label">氦原子</span></span><span id="slow-key" hidden><i class="atom-key slow"></i><span id="slow-label"></span></span><span><i class="impact-key"></i>撞壁</span><span class="hit-count">六面合計 · 最近 1 皮秒 <b id="hit-count">0</b> 次</span></div>
+        <p id="collision-reason" hidden>沿同一方向運動，速率加倍，撞壁頻率和每次傳給壁的動量都加倍。</p>
       </section>
       <aside>
-        <section class="settings" aria-labelledby="control-title">
+        <section id="free-settings" class="settings" aria-labelledby="control-title">
           <h2 id="control-title">粒子設定</h2>
           <label for="speed">整體分子速率 <output id="speed-out" for="speed"></output></label>
           <input type="range" id="speed" min="0.5" max="2" step="0.05" value="1">
@@ -36,6 +38,23 @@
           <label for="count">分子數目 <i>N</i><output id="count-out" for="count"></output></label>
           <input type="range" id="count" min="12" max="96" step="12" value="24">
           <div class="ends"><span>12 粒</span><span>96 粒</span></div>
+        </section>
+        <section id="comparison-settings" class="settings" aria-labelledby="comparison-title" hidden>
+          <h2 id="comparison-title">平均速率相同，壓強也相同嗎？</h2>
+          <p class="sample-note">每箱有 24 粒氦原子，體積相同。</p>
+          <div class="sample-buttons" role="group" aria-label="選擇觀察的氣箱">
+            <button id="sample-a" aria-pressed="true">A 箱 · 全部同速</button>
+            <button id="sample-b" aria-pressed="false">B 箱 · 一半慢，一半快</button>
+          </div>
+          <table class="samples">
+            <thead><tr><th scope="col">物理量</th><th scope="col">A 箱</th><th scope="col">B 箱</th></tr></thead>
+            <tbody>
+              <tr><th scope="row">分子速率 <small>(m/s)</small></th><td id="a-speeds"></td><td id="b-speeds"></td></tr>
+              <tr><th scope="row">平均速率 <small>(m/s)</small></th><td id="a-mean"></td><td id="b-mean"></td></tr>
+              <tr><th scope="row">平均平方速率 <small>(m²/s²)</small></th><td id="a-square"></td><td id="b-square"></td></tr>
+              <tr><th scope="row">平均壓強 <small>(kPa)</small></th><td id="a-pressure"></td><td id="b-pressure"></td></tr>
+            </tbody>
+          </table>
         </section>
         <section class="relation" aria-labelledby="formula-title">
           <h2 id="formula-title">氣體分子運動論</h2>
@@ -46,12 +65,17 @@
           </div>
           <div class="legend"><span>與上一步比較</span><b class="up-key">↑ 增加</b><b class="down-key">↓ 減少</b></div>
         </section>
-        <section class="readings" aria-labelledby="read-title"><h2 id="read-title">氣體讀數</h2>
+        <section id="free-readings" class="readings" aria-labelledby="read-title"><h2 id="read-title">氣體讀數</h2>
           <dl>
             <div><dt>平均壓強</dt><dd><b id="pressure"></b> <span>kPa</span></dd></div>
             <div><dt>速率平方的平均值</dt><dd><b id="mean-square"></b> <span>× 10<sup>6</sup> m²/s²</span></dd></div>
           </dl>
           <div class="constants"><span>固定條件</span><div>每粒質量 <i>m</i>　6.64 × 10<sup>−27</sup> kg</div><div>氣箱體積 <i>V</i>　1.00 × 10<sup>−24</sup> m³</div></div>
+        </section>
+        <section id="average-step" class="readings" aria-labelledby="average-title" hidden>
+          <h2 id="average-title">先逐粒平方，再取平均</h2>
+          <div id="sample-calculation"></div>
+          <p>把每粒的速率平方相加，除以粒子數 <i>N</i> 就得到平均值。公式乘回 <i>N</i>，便計入全箱的貢獻。</p>
         </section>
         <p id="feedback" aria-live="polite" aria-atomic="true">速率不變，增加粒子會怎樣影響撞壁？</p>
       </aside>

@@ -19,3 +19,23 @@ input[type=range]{--pct:0%;width:100%;margin:0;height:44px;display:block;appeara
 @media(max-width:760px),(orientation:portrait){.lab{height:auto;min-height:100svh;padding:14px;gap:12px}.bench{grid-template-columns:1fr}.scene{height:clamp(320px,51svh,560px)}aside{display:grid;grid-template-columns:1fr 1fr;align-items:start;gap:12px 18px;padding:16px}.settings,.relation{padding:0 0 12px;border:0}.readings{padding:0}.constants{margin-top:5px}}
 @media(min-width:620px) and (orientation:portrait){.lab{height:100svh}.bench{grid-template-rows:minmax(0,1fr) auto}.scene{height:auto}}
 @media(max-width:540px){.lab{padding:10px}.actions{gap:4px}.actions button{min-width:48px;padding:0 7px;font-size:13px}.scene{height:360px}.scene-foot{gap:9px;padding-inline:10px}.scene-foot span{gap:4px}aside{grid-template-columns:1fr;gap:14px}.settings,.relation{border-bottom:1px solid var(--line)}.legend{gap:8px;font-size:12px}.equation{gap:10px}.actions .reset-icon{display:none}}
+.lab [hidden]{display:none}
+.actions #compare{padding-inline:12px}
+.atom-key.slow{background:#c6a3ff}
+.sample-note,#average-step p{color:var(--muted);font-size:14px;line-height:1.45}
+.sample-buttons{display:flex;gap:4px;margin:9px 0}
+.sample-buttons button{flex:1;min-height:44px;border:1px solid var(--line);border-radius:6px;background:#f5f6ec;color:var(--ink);font:inherit;font-size:14px;font-weight:650;cursor:pointer}
+.sample-buttons button[aria-pressed="true"]{color:white;background:var(--accent);border-color:var(--accent)}
+.samples{width:100%;border-collapse:collapse;font-size:14px;font-variant-numeric:tabular-nums}
+.samples th,.samples td{padding:3px 0;text-align:right}
+.samples th:first-child{text-align:left}
+.samples tbody th{font-weight:normal}
+.samples thead th{border-bottom:1px solid var(--line);color:var(--muted)}
+.samples small{font-size:11px;color:var(--muted)}
+.samples td{font-family:Consolas,monospace}
+#sample-calculation{margin:7px 0 10px;text-align:center;color:var(--accent);font-size:16px}
+#sample-calculation .katex{font-size:1em}
+#collision-reason{margin:0 19px 12px;padding-top:8px;border-top:1px solid #47605a;color:#d4e4dd;font-size:14px;line-height:1.4}
+aside:has(#comparison-settings:not([hidden])) .equation{margin-block:6px}
+@media(min-width:761px) and (max-height:720px){.sample-buttons{margin-block:4px}.samples th,.samples td{padding-block:1px}#comparison-settings h2,#average-step h2{margin-bottom:4px}}
+@media(max-width:540px){header{align-items:flex-start;flex-wrap:wrap;gap:6px}.scene-foot{flex-wrap:wrap}}

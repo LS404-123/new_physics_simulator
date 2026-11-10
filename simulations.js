@@ -216,7 +216,7 @@
     },
     {
       title: "分子撞壁與氣體壓強",
-      description: "調整分子速率與數目，觀察三維氣箱六面牆上的撞擊，從公式的紅藍變化連繫粒子運動與氣體壓強。",
+      description: "調整分子速率與數目，觀察六面撞壁。比較平均速率相同的兩箱氣體，找出壓強為何取決於速率平方的平均值。",
       topic: "熱和氣體",
       subtopic: "氣體",
       href: "./HEAT/gas-kinetic-energy/index.html",

@@ -30,4 +30,16 @@ for (const speed of [2, 0.5, 1]) {
 }
 assert.deepEqual(walls, new Set(["x-1", "x1", "y-1", "y1", "z-1", "z1"]));
 assert.throws(() => model.setControls(state, 1, 1), RangeError);
-console.log("通過：三維反射、速率平方、分子數目、平均與總動能、壓強及溫度。");
+const samples = [false, true].map(mixed => {
+  const box = model.createComparisonBox(mixed);
+  for (let i = 0; i < 50; i++) model.advance(box, 0.08);
+  return model.readings(box);
+});
+const [uniform, mixed] = samples;
+assert.equal(uniform.count, mixed.count);
+close(uniform.meanSpeed, 400);
+close(mixed.meanSpeed, uniform.meanSpeed);
+close(uniform.meanSquare, 400 ** 2);
+close(mixed.meanSquare, (12 * 200 ** 2 + 12 * 600 ** 2) / 24);
+close(mixed.pressure / uniform.pressure, 1.25);
+console.log("通過：三維撞壁、分子數目與速率調整，以及等平均速率下的均方值與壓強比較。");

@@ -1,9 +1,10 @@
 (() => {
   "use strict";
   const $ = id => document.getElementById(id);
-  const { create, setControls, readings, advance, defaults, impactWindow } = GasEnergy;
+  const { create, createComparisonBox, setControls, readings, advance, defaults, impactWindow } = GasEnergy;
   const motion = matchMedia("(prefers-reduced-motion: reduce)");
-  let state = create(), paused = motion.matches, frame = 0, lastTime = null;
+  let freeBox = create(), state = freeBox, samples = null, seenMixed = false;
+  let paused = motion.matches, frame = 0, lastTime = null;
   $("chamber").innerHTML = chamberArt.svg;
   function svgNode(name, attrs) {
     const node = document.createElementNS("http://www.w3.org/2000/svg", name);
@@ -84,8 +85,7 @@
   for (const [id, tex] of Object.entries(formulas)) {
     katex.render(tex, $(id), { trust: context => context.command === "\\htmlClass", strict: "ignore" });
   }
-  function render(previous = null) {
-    const data = readings(state);
+  function showFreeReadings(data, previous) {
     $("speed-out").textContent = state.speed.toFixed(2) + " ×";
     $("count-out").textContent = data.count + " 粒";
     for (const id of ["speed", "count"]) {
@@ -95,12 +95,6 @@
     }
     $("mean-square").textContent = (data.meanSquare / 1e6).toFixed(2);
     $("pressure").textContent = (data.pressure / 1000).toFixed(1);
-    for (const key of ["pressure", "meanSquare", "count"]) {
-      const term = document.querySelector(".term." + key);
-      const ratio = previous ? data[key] / previous[key] : 1;
-      if (Math.abs(ratio - 1) < 1e-9) term.removeAttribute("data-change");
-      else term.dataset.change = ratio > 1 ? "up" : "down";
-    }
     if (previous) {
       const numberChanged = data.count !== previous.count;
       const up = data.pressure > previous.pressure;
@@ -109,7 +103,81 @@
         ? "分子數目" + direction + "，速率分布相同。平均壓強" + direction + "。"
         : "分子速率" + (up ? "上升" : "下降") + "，速率平方的平均值及壓強都" + direction + "。";
     } else $("feedback").textContent = "速率不變，增加粒子會怎樣影響撞壁？";
+  }
+  function showComparison() {
+    const mixed = state === samples.b;
+    $("sample-a").setAttribute("aria-pressed", String(!mixed));
+    $("sample-b").setAttribute("aria-pressed", String(mixed));
+    $("scene-title").textContent = mixed ? "B 箱 · 一半慢，一半快" : "A 箱 · 全部同速";
+    const groups = state.speedGroups;
+    $("atom-label").textContent = groups[groups.length - 1].speed + " m/s";
+    $("slow-key").hidden = !mixed;
+    $("slow-label").textContent = groups[0].speed + " m/s";
+    const a = readings(samples.a), b = readings(samples.b);
+    for (const [id, data] of [["a", a], ["b", b]]) {
+      const reveal = id === "a" || seenMixed;
+      $(id + "-speeds").textContent = samples[id].speedGroups.map(group => group.speed).join("、");
+      $(id + "-mean").textContent = Math.round(data.meanSpeed);
+      $(id + "-square").textContent = reveal ? Math.round(data.meanSquare).toLocaleString("en-GB") : "待觀察";
+      $(id + "-pressure").textContent = reveal ? (data.pressure / 1000).toFixed(2) : "待觀察";
+    }
+    const sum = groups.map(g => g.count + "\\times " + g.speed + "^2").join("+");
+    const meanSquare = Math.round((mixed ? b : a).meanSquare).toLocaleString("en-GB").replaceAll(",", "\\,");
+    katex.render("\\overline{c^2}=\\dfrac{" + sum + "}{" + state.particles.length + "}=" + meanSquare,
+      $("sample-calculation"));
+    const percent = Math.round(100 * (b.pressure / a.pressure - 1));
+    $("feedback").textContent = seenMixed
+      ? "兩箱平均速率相同。B 箱的平均平方速率及壓強都比 A 箱高 " + percent + "%。"
+      : "兩箱的平均速率相同。先預測壓強，再選 B 箱觀察。";
+  }
+  function render(previous = null) {
+    const data = readings(state);
+    if (samples) showComparison();
+    else {
+      $("scene-title").textContent = "分子觀察室";
+      $("atom-label").textContent = "氦原子";
+      $("slow-key").hidden = true;
+      showFreeReadings(data, previous);
+    }
+    const mixed = samples && state === samples.b;
+    dots.forEach((dot, i) => dot.setAttribute("fill", mixed && i < state.speedGroups[0].count ? "#c6a3ff" : "url(#atom)"));
+    for (const key of ["pressure", "meanSquare", "count"]) {
+      const term = document.querySelector(".term." + key);
+      const ratio = previous ? data[key] / previous[key] : 1;
+      if (Math.abs(ratio - 1) < 1e-9) term.removeAttribute("data-change");
+      else term.dataset.change = ratio > 1 ? "up" : "down";
+    }
     drawParticles();
+  }
+  function startComparison() {
+    samples = { a: createComparisonBox(false), b: createComparisonBox(true) };
+    state = samples.a;
+    seenMixed = false;
+  }
+  function syncMode() {
+    const comparing = location.hash === "#mean-square";
+    if (comparing === Boolean(samples)) return;
+    if (comparing) startComparison();
+    else { samples = null; state = freeBox; }
+    $("compare").setAttribute("aria-expanded", String(comparing));
+    $("compare").textContent = comparing ? "返回自由調整" : "比較平均速率";
+    $("free-settings").hidden = $("free-readings").hidden = comparing;
+    $("comparison-settings").hidden = $("average-step").hidden = !comparing;
+    $("collision-reason").hidden = !comparing;
+    lastTime = null;
+    render();
+  }
+  $("compare").addEventListener("click", () => { location.hash = samples ? "" : "mean-square"; });
+  window.addEventListener("hashchange", syncMode);
+  for (const id of ["a", "b"]) {
+    $("sample-" + id).addEventListener("click", () => {
+      if (state === samples[id]) return;
+      const previous = readings(state);
+      state = samples[id];
+      if (id === "b") seenMixed = true;
+      lastTime = null;
+      render(previous);
+    });
   }
   for (const id of ["speed", "count"]) {
     $(id).addEventListener("input", () => {
@@ -136,15 +204,19 @@
   }
   $("play").addEventListener("click", () => { paused = !paused; playback(); });
   $("reset").addEventListener("click", () => {
-    state = create();
-    $("speed").value = defaults.speed;
-    $("count").value = defaults.count;
+    if (samples) startComparison();
+    else {
+      freeBox = state = create();
+      $("speed").value = defaults.speed;
+      $("count").value = defaults.count;
+    }
     paused = motion.matches;
     render();
     playback();
   });
   motion.addEventListener("change", () => { paused = motion.matches; playback(); });
   document.addEventListener("visibilitychange", playback);
-  render();
+  if (location.hash === "#mean-square") syncMode();
+  else render();
   playback();
 })();

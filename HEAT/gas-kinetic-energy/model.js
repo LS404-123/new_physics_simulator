@@ -48,14 +48,31 @@
     state.hits = [];
   }
 
+  function createComparisonBox(mixed) {
+    const state = create();
+    const speeds = mixed ? [200, 600] : [400];
+    const perGroup = state.particles.length / speeds.length;
+    state.speedGroups = speeds.map(speed => ({ speed, count: perGroup }));
+    // 每半箱有三組完整的四面體方向，改速率後三軸均方分量仍相同。
+    state.particles.forEach((p, i) => {
+      const speed = speeds[Math.floor(i / perGroup)];
+      const scale = speed / (gas.SPEED_UNIT * Math.hypot(p.vx, p.vy, p.vz));
+      p.vx *= scale;
+      p.vy *= scale;
+      p.vz *= scale;
+    });
+    return state;
+  }
+
   function readings(state) {
     const { total2, x2 } = gas.moments(state);
     const count = state.particles.length;
+    const meanSpeed = gas.SPEED_UNIT * state.particles.reduce((sum, p) => sum + Math.hypot(p.vx, p.vy, p.vz), 0) / count;
     const meanSquare = total2 * gas.SPEED_UNIT ** 2 / count;
     const mean = mass * meanSquare / 2;
     // 每個粒子在同一面牆的長時間平均動量轉移率除以面積。
     const pressure = mass * x2 * gas.SPEED_UNIT ** 2 / volume;
-    return { count, meanSquare, pressure, mean, total: count * mean, temperature: 2 * mean / (3 * boltzmann) };
+    return { count, meanSpeed, meanSquare, pressure, mean, total: count * mean, temperature: 2 * mean / (3 * boltzmann) };
   }
-  return { create, setControls, readings, advance: gas.advance, defaults, mass, volume, impactWindow };
+  return { create, createComparisonBox, setControls, readings, advance: gas.advance, defaults, mass, volume, impactWindow };
 });
