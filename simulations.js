@@ -213,6 +213,15 @@
       href: "./HEAT/kinetic-gas/index.html",
       image: "./HEAT/kinetic-gas/preview.png",
       tags: ["理想氣體", "分子運動論", "PVT", "定溫", "定容", "定壓", "壓強", "體積", "絕對溫度", "碰撞", "動量", "平均動能"]
+    },
+    {
+      title: "分子撞壁與氣體壓強",
+      description: "調整分子速率與數目，觀察三維氣箱六面牆上的撞擊，從公式的紅藍變化連繫粒子運動與氣體壓強。",
+      topic: "熱和氣體",
+      subtopic: "氣體",
+      href: "./HEAT/gas-kinetic-energy/index.html",
+      image: "./HEAT/gas-kinetic-energy/preview.png",
+      tags: ["氣體分子運動論", "速率", "粒子數目", "撞壁", "平均平方速率", "壓強", "pV", "三維"]
     }
   ];
 
