@@ -48,12 +48,14 @@
     state.hits = [];
   }
 
-  function createMixedBox() {
+  function createMixedBox(count = defaults.count) {
     const state = create();
+    if (!Number.isInteger(count) || count < 8 || count > state.pool.length || count % 8) throw new RangeError("每組須包含完整的四面體方向");
+    state.particles = state.pool.slice(0, count);
     const speeds = [200, 600];
     const perGroup = state.particles.length / speeds.length;
     state.speedGroups = speeds.map(speed => ({ speed, count: perGroup }));
-    // 每半箱有三組完整的四面體方向，改速率後三軸均方分量仍相同。
+    // 每半箱由完整的四面體方向組成，改速率後三軸均方分量仍相同。
     state.particles.forEach((p, i) => {
       p.group = Math.floor(i / perGroup);
       const speed = speeds[p.group];

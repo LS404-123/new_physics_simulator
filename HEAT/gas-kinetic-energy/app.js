@@ -20,7 +20,7 @@
     const t = state.thermal;
     if (plottedCounts !== t.counts) {
       plottedCounts = t.counts;
-      const top = Math.max(12, 2 * Math.ceil(Math.max(...t.counts, ...t.expected) / 2));
+      const top = Math.max(state.particles.length / 2, 2 * Math.ceil(Math.max(...t.counts, ...t.expected) / 2));
       const y = count => 145 - 110 * count / top;
       bars.forEach((bar, i) => {
         bar.setAttribute("y", y(t.counts[i]));
@@ -31,7 +31,7 @@
       $("equilibrium-line").setAttribute("d", t.expected.map((count, i) => (i ? "L" : "M") + (36.5 + i * 17) + " " + y(count)).join(" "));
       $("sampling-note").textContent = (t.samples.length ? "柱高為最近 " + t.samples.length + " 次全箱取樣的平均粒子數。" : "柱高為開始時的粒子數。")
         + "虛線為 Maxwell–Boltzmann 平衡分佈。";
-      $("chart-description").textContent = "全箱 24 粒，每欄 80 m/s，最後一欄為 1200 m/s 或以上。各欄粒子數：" + t.counts.map(n => n.toFixed(1)).join("、");
+      $("chart-description").textContent = "全箱 " + state.particles.length + " 粒，每欄 80 m/s，最後一欄為 1200 m/s 或以上。各欄粒子數：" + t.counts.map(n => n.toFixed(1)).join("、");
     }
     if (force || state.time - lastThermalReadout >= 0.25) {
       lastThermalReadout = state.time;
@@ -169,7 +169,7 @@
   function render(previous = null) {
     const data = readings(state);
     if (state.thermal) {
-      $("scene-title").textContent = "粒子互撞 · 24 粒氦原子";
+      $("scene-title").textContent = "粒子互撞 · " + data.count + " 粒氦原子";
       $("atom-label").textContent = "氦原子";
       $("slow-key").hidden = true;
       drawDistribution(true);

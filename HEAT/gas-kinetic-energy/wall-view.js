@@ -2,10 +2,13 @@
 
 function createWallView(svgNode) {
   const $ = id => document.getElementById(id);
-  const dots = Array.from({ length: GasEnergy.defaults.count }, () => svgNode("circle", { r: 3.8 }));
-  $("flat-dots").append(...dots);
+  let dots = [];
 
   return function draw(box, included) {
+    if (dots.length !== box.particles.length) {
+      dots = box.particles.map(() => svgNode("circle", {}));
+      $("flat-dots").replaceChildren(...dots);
+    }
     box.particles.forEach((p, i) => {
       dots[i].setAttribute("cx", 48 + 224 * p.x / box.width);
       dots[i].setAttribute("cy", 244 - 224 * p.z / box.width);

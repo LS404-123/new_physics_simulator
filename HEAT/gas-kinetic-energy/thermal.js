@@ -33,16 +33,17 @@
   }
 
   function create() {
-    const box = energy.createMixedBox();
+    const box = energy.createMixedBox(80);
     delete box.speedGroups;
-    const radius = box.width * 0.0375;
+    const radius = box.width * 0.01875;
+    const grid = Math.ceil(Math.cbrt(box.particles.length));
     // 把粒子分放在不重疊的格子內，保留 B 箱的初速及三維方向。
     box.particles.forEach((p, i) => {
-      let cell = i * 11 % 27;
+      let cell = i * 11 % (grid ** 3);
       for (const axis of axes) {
         const jitter = (p[axis] / box.width - 0.5) * 0.45;
-        p[axis] = (cell % 3 + 0.5 + jitter) * box.width / 3;
-        cell = Math.floor(cell / 3);
+        p[axis] = (cell % grid + 0.5 + jitter) * box.width / grid;
+        cell = Math.floor(cell / grid);
       }
     });
     const initial = histogram(box.particles);

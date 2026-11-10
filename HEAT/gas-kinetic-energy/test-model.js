@@ -60,10 +60,16 @@ assert.equal(pair.thermal.collisions, 1);
 close(a.vx, 0.5); close(a.vy, -0.5); close(b.vx, 0.5); close(b.vy, 0.5);
 
 const evolving = thermal.create();
-assert.deepEqual(evolving.thermal.counts.filter(Boolean), [12, 12]);
+assert.equal(evolving.particles.length, 80);
+assert.deepEqual(evolving.thermal.counts.filter(Boolean), [40, 40]);
+for (const [i, p] of evolving.particles.entries()) {
+  for (const q of evolving.particles.slice(i + 1)) {
+    assert.ok(Math.hypot(p.x - q.x, p.y - q.y, p.z - q.z) > 2 * evolving.thermal.radius);
+  }
+}
 assert.equal(thermal.wallPressure(evolving), null);
 const initialSquare = model.readings(evolving).meanSquare;
-const distance = counts => counts.reduce((sum, n, i) => sum + Math.abs(n - evolving.thermal.expected[i]), 0) / 48;
+const distance = counts => counts.reduce((sum, n, i) => sum + Math.abs(n - evolving.thermal.expected[i]), 0) / (2 * evolving.particles.length);
 assert.ok(distance(evolving.thermal.counts) > 0.6);
 const accumulated = evolving.thermal.counts.map(() => 0);
 for (let i = 0; i < 2400; i++) {
@@ -71,7 +77,7 @@ for (let i = 0; i < 2400; i++) {
   if (i >= 800 && i % 10 === 0) thermal.histogram(evolving.particles).forEach((n, j) => accumulated[j] += n / 160);
 }
 close(model.readings(evolving).meanSquare, initialSquare);
-close(evolving.thermal.counts.reduce((sum, n) => sum + n, 0), 24);
+close(evolving.thermal.counts.reduce((sum, n) => sum + n, 0), 80);
 assert.ok(evolving.particles.every(p => [p.x,p.y,p.z].every(x => x >= evolving.thermal.radius - 1e-9 && x <= evolving.width - evolving.thermal.radius + 1e-9)));
 assert.ok(thermal.wallPressure(evolving) > 0);
 assert.ok(evolving.thermal.collisions > 100 && distance(accumulated) < 0.1);
