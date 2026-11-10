@@ -42,4 +42,30 @@ close(mixed.meanSpeed, uniform.meanSpeed);
 close(uniform.meanSquare, 400 ** 2);
 close(mixed.meanSquare, (12 * 200 ** 2 + 12 * 600 ** 2) / 24);
 close(mixed.pressure / uniform.pressure, 1.25);
-console.log("通過：三維撞壁、分子數目與速率調整，以及等平均速率下的均方值與壓強比較。");
+
+const meter = model.createComparisonBox(false);
+assert.equal(model.wallReading(meter).pressure, null);
+meter.particles = [
+  { x: meter.width - 0.06, y: 0.5, z: 0.5, vx: 1, vy: 0, vz: 0 },
+  { x: meter.width - 0.04, y: 0.5, z: 0.7, vx: 2, vy: 0, vz: 0 },
+  { x: 0.02, y: 0.5, z: 0.5, vx: -1, vy: 0, vz: 0 }
+];
+model.advance(meter, 0.1);
+const [first, second] = meter.wallTransfers;
+assert.equal(meter.wallTransfers.length, 2);
+assert.ok(first.ps < second.ps);
+const speedUnit = require("../kinetic-gas/model.js").SPEED_UNIT;
+close(first.impulse, 4 * model.mass * speedUnit);
+close(second.total, 6 * model.mass * speedUnit);
+const elapsedSeconds = 0.1 * Math.cbrt(model.volume) / (meter.width * speedUnit);
+close(model.wallReading(meter).pressure, second.total / (Math.cbrt(model.volume) ** 2 * elapsedSeconds));
+for (const useMixed of [false, true]) {
+  const box = model.createComparisonBox(useMixed);
+  for (let i = 0; i < 140; i++) model.advance(box, 0.1);
+  const result = model.wallReading(box);
+  close(result.ps, 100);
+  assert.ok(result.total > 0 && result.total < 1.5e-22, "階梯線須落在共用刻度之內");
+  model.advance(box, 0.1);
+  assert.deepEqual(model.wallReading(box), result);
+}
+console.log("通過：六面撞壁、均方速率、右壁衝量的次序及單位、100 ps 量度壓強。");

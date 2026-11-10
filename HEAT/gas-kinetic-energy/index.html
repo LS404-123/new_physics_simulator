@@ -11,6 +11,7 @@
   <script defer src="../kinetic-gas/model.js"></script>
   <script defer src="model.js"></script>
   <script defer src="chamber-art.js"></script>
+  <script defer src="wall-view.js"></script>
   <script defer src="app.js"></script>
 </head>
 <body>
@@ -22,12 +23,34 @@
         <button id="play"><span class="play-icon" aria-hidden="true"></span><span id="play-label">暫停</span></button>
         <button id="reset"><span class="reset-icon" aria-hidden="true">↺</span>重設</button></div>
     </header>
-    <section class="bench" aria-label="三維氣箱及粒子設定">
+    <section class="bench" aria-label="氣箱及粒子設定">
       <section class="scene" aria-labelledby="scene-title">
         <div class="scene-heading"><h2 id="scene-title">分子觀察室</h2><span class="state"><i></i><span id="run-status">慢鏡播放</span></span></div>
         <svg id="chamber" viewBox="58 34 404 410" role="img" aria-label="立方氣箱內的氦原子向各方向運動。青綠色光圈在六面容器壁的實際撞點向外擴散。"></svg>
-        <div class="scene-foot"><span><i class="atom-key"></i><span id="atom-label">氦原子</span></span><span id="slow-key" hidden><i class="atom-key slow"></i><span id="slow-label"></span></span><span><i class="impact-key"></i>撞壁</span><span class="hit-count">六面合計 · 最近 1 皮秒 <b id="hit-count">0</b> 次</span></div>
-        <p id="collision-reason" hidden>沿同一方向運動，速率加倍，撞壁頻率和每次傳給壁的動量都加倍。</p>
+        <div id="wall-study" hidden>
+          <svg id="flat-chamber" viewBox="0 0 370 264" role="img" aria-label="立方氣箱的二維正視投影。右側青綠色直線代表量度壁面，向右箭嘴愈長，表示單次傳給壁面的垂直動量愈大。">
+            <defs><pattern id="flat-grid" width="28" height="28" patternUnits="userSpaceOnUse"><path d="M 28 0 H 0 V 28" fill="none" stroke="#4c7469" stroke-width=".7"/></pattern></defs>
+            <rect x="48" y="20" width="224" height="224" fill="#203b38" stroke="#9bb0a5" stroke-width="2"/>
+            <rect x="48" y="20" width="224" height="224" fill="url(#flat-grid)"/>
+            <g id="flat-dots"></g>
+            <path d="M272 20V244" stroke="#65f6dc" stroke-width="4"/>
+            <text x="282" y="33" fill="#a3ffe9" font-size="12">右壁</text>
+            <g id="flat-impacts"></g>
+          </svg>
+          <section class="wall-chart" aria-label="右壁的累積垂直動量對時間圖">
+            <div class="chart-heading"><h3>右壁收到的累積垂直動量 <small>（10<sup>−23</sup> N·s）</small></h3>
+              <div class="chart-key"><span>A 箱</span><span id="chart-key-b" hidden>B 箱</span></div></div>
+            <svg id="momentum-plot" viewBox="0 0 540 113" role="img" aria-label="每次撞右壁，動量曲線向上跳一級。兩箱使用相同的時間及動量刻度。">
+              <g class="chart-grid"><path d="M32 8H516 M32 33H516 M32 58H516 M32 83H516 M32 8V83 M274 8V83 M516 8V83"/></g>
+              <g class="chart-labels"><text x="25" y="12">15</text><text x="25" y="37">10</text><text x="25" y="62">5</text><text x="25" y="87">0</text><text x="35" y="100">0</text><text x="280" y="100">50</text><text x="524" y="100">100</text><text x="300" y="111">時間（ps）</text></g>
+              <path id="trace-a" class="trace trace-a"/><path id="trace-b" class="trace trace-b"/>
+              <line id="wall-secant" x1="32" y1="83" x2="32" y2="83"/>
+            </svg>
+            <div class="wall-reading"><span><b id="wall-time">0.0</b> ps 內撞右壁 <b id="wall-count">0</b> 次</span><span>量得壓強 <b id="wall-pressure">—</b> kPa</span></div>
+          </section>
+        </div>
+        <div class="scene-foot"><span><i class="atom-key"></i><span id="atom-label">氦原子</span></span><span id="slow-key" hidden><i class="atom-key slow"></i><span id="slow-label"></span></span><span id="hit-key"><i class="impact-key"></i>撞壁</span><span id="wall-arrow-key" hidden>→ 箭長表示單次垂直動量</span><span class="hit-count" id="all-hits">六面合計 · 最近 1 皮秒 <b id="hit-count">0</b> 次</span></div>
+        <p id="collision-reason" hidden>每次撞右壁，圖線就跳高一級。所選氣箱的虛線斜率是平均力，除以右壁面積（100 nm²）便得到平均壓強。</p>
       </section>
       <aside>
         <section id="free-settings" class="settings" aria-labelledby="control-title">
@@ -52,7 +75,7 @@
               <tr><th scope="row">分子速率 <small>(m/s)</small></th><td id="a-speeds"></td><td id="b-speeds"></td></tr>
               <tr><th scope="row">平均速率 <small>(m/s)</small></th><td id="a-mean"></td><td id="b-mean"></td></tr>
               <tr><th scope="row">平均平方速率 <small>(m²/s²)</small></th><td id="a-square"></td><td id="b-square"></td></tr>
-              <tr><th scope="row">平均壓強 <small>(kPa)</small></th><td id="a-pressure"></td><td id="b-pressure"></td></tr>
+              <tr><th scope="row">長時間平均壓強 <small>(kPa)</small></th><td id="a-pressure"></td><td id="b-pressure"></td></tr>
             </tbody>
           </table>
         </section>
@@ -75,7 +98,7 @@
         <section id="average-step" class="readings" aria-labelledby="average-title" hidden>
           <h2 id="average-title">先逐粒平方，再取平均</h2>
           <div id="sample-calculation"></div>
-          <p>把每粒的速率平方相加，除以粒子數 <i>N</i> 就得到平均值。公式乘回 <i>N</i>，便計入全箱的貢獻。</p>
+          <p>水平速率加倍，撞右壁的頻率和每次傳給壁的動量都加倍。全箱逐粒加總速率平方，除以粒子數 <i>N</i>，便得到平均平方速率。</p>
         </section>
         <p id="feedback" aria-live="polite" aria-atomic="true">速率不變，增加粒子會怎樣影響撞壁？</p>
       </aside>

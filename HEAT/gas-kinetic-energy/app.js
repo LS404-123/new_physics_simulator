@@ -11,6 +11,7 @@
     for (const [key, value] of Object.entries(attrs)) node.setAttribute(key, value);
     return node;
   }
+  const drawWall = createWallView(svgNode);
   // 氣箱和粒子的投影共用 Anatomy 產生的三個基向量。
   const [u, v, w] = chamberArt.basis;
   function project(p) {
@@ -63,6 +64,7 @@
     if ($("hit-count").textContent !== count) $("hit-count").textContent = count;
   }
   function drawParticles() {
+    if (samples) { drawWall(state, samples, seenMixed); return; }
     const layer = $("particles");
     const order = state.particles.map((p, i) => {
       const [x, y] = project(p);
@@ -108,7 +110,7 @@
     const mixed = state === samples.b;
     $("sample-a").setAttribute("aria-pressed", String(!mixed));
     $("sample-b").setAttribute("aria-pressed", String(mixed));
-    $("scene-title").textContent = mixed ? "B 箱 · 一半慢，一半快" : "A 箱 · 全部同速";
+    $("scene-title").textContent = (mixed ? "B 箱" : "A 箱") + " · 氣箱正視圖";
     const groups = state.speedGroups;
     $("atom-label").textContent = groups[groups.length - 1].speed + " m/s";
     $("slow-key").hidden = !mixed;
@@ -127,8 +129,12 @@
       $("sample-calculation"));
     const percent = Math.round(100 * (b.pressure / a.pressure - 1));
     $("feedback").textContent = seenMixed
-      ? "兩箱平均速率相同。B 箱的平均平方速率及壓強都比 A 箱高 " + percent + "%。"
+      ? "兩箱平均速率相同。B 箱的平均平方速率及長時間平均壓強都比 A 箱高 " + percent + "%。"
       : "兩箱的平均速率相同。先預測壓強，再選 B 箱觀察。";
+    if (seenMixed && observationDone()) {
+      const summary = box => box.wallTransfers.length + " 次（" + (GasEnergy.wallReading(box).pressure / 1000).toFixed(2) + " kPa）";
+      $("feedback").textContent = "100 ps 內，A 箱撞右壁 " + summary(samples.a) + "，B 箱撞右壁 " + summary(samples.b) + "。";
+    }
   }
   function render(previous = null) {
     const data = readings(state);
@@ -139,8 +145,6 @@
       $("slow-key").hidden = true;
       showFreeReadings(data, previous);
     }
-    const mixed = samples && state === samples.b;
-    dots.forEach((dot, i) => dot.setAttribute("fill", mixed && i < state.speedGroups[0].count ? "#c6a3ff" : "url(#atom)"));
     for (const key of ["pressure", "meanSquare", "count"]) {
       const term = document.querySelector(".term." + key);
       const ratio = previous ? data[key] / previous[key] : 1;
@@ -163,9 +167,12 @@
     $("compare").textContent = comparing ? "返回自由調整" : "比較平均速率";
     $("free-settings").hidden = $("free-readings").hidden = comparing;
     $("comparison-settings").hidden = $("average-step").hidden = !comparing;
-    $("collision-reason").hidden = !comparing;
+    $("collision-reason").hidden = $("wall-study").hidden = $("wall-arrow-key").hidden = !comparing;
+    $("chamber").toggleAttribute("hidden", comparing);
+    $("all-hits").hidden = $("hit-key").hidden = comparing;
     lastTime = null;
     render();
+    playback();
   }
   $("compare").addEventListener("click", () => { location.hash = samples ? "" : "mean-square"; });
   window.addEventListener("hashchange", syncMode);
@@ -189,20 +196,41 @@
     });
   }
   function tick(time) {
-    if (lastTime !== null) advance(state, Math.min(0.1, (time - lastTime) * 0.00025));
+    if (lastTime !== null) {
+      const dt = Math.min(0.1, (time - lastTime) * (samples ? 0.00095 : 0.00025));
+      if (samples) {
+        advance(samples.a, dt);
+        advance(samples.b, dt);
+      } else advance(state, dt);
+    }
     lastTime = time;
     drawParticles();
-    frame = requestAnimationFrame(tick);
+    if (observationDone()) { showComparison(); playback(); }
+    else frame = requestAnimationFrame(tick);
+  }
+  function observationDone() {
+    return samples && state.time >= GasEnergy.observationPs * impactWindow;
   }
   function playback() {
     cancelAnimationFrame(frame);
     lastTime = null;
-    document.body.classList.toggle("paused", paused);
-    $("play-label").textContent = paused ? "播放" : "暫停";
-    $("run-status").textContent = paused ? "已暫停" : "慢鏡播放";
-    if (!paused && !document.hidden) frame = requestAnimationFrame(tick);
+    const done = observationDone();
+    document.body.classList.toggle("paused", paused || done);
+    $("play-label").textContent = done ? "重播量度" : paused ? "播放" : "暫停";
+    $("run-status").textContent = done ? "量度完成" : paused ? "已暫停" : "慢鏡播放";
+    if (!paused && !done && !document.hidden) frame = requestAnimationFrame(tick);
   }
-  $("play").addEventListener("click", () => { paused = !paused; playback(); });
+  $("play").addEventListener("click", () => {
+    if (observationDone()) {
+      const mixed = state === samples.b, reveal = seenMixed;
+      startComparison();
+      state = mixed ? samples.b : samples.a;
+      seenMixed = reveal;
+      paused = false;
+      render();
+    } else paused = !paused;
+    playback();
+  });
   $("reset").addEventListener("click", () => {
     if (samples) startComparison();
     else {

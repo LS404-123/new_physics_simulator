@@ -216,7 +216,7 @@
     },
     {
       title: "分子撞壁與氣體壓強",
-      description: "調整分子速率與數目，觀察六面撞壁。比較平均速率相同的兩箱氣體，找出壓強為何取決於速率平方的平均值。",
+      description: "調整分子速率與數目，觀察六面撞壁。以正視圖比較平均速率相同的兩箱氣體，由右壁累積收到的動量量度壓強。",
       topic: "熱和氣體",
       subtopic: "氣體",
       href: "./HEAT/gas-kinetic-energy/index.html",

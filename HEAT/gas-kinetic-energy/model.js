@@ -5,6 +5,8 @@
   "use strict";
   const mass = 0.004 / 6.02214076e23;
   const volume = 1e-24;
+  const wallArea = Math.cbrt(volume) ** 2;
+  const observationPs = 100;
   // 把 1 ps 換算為撞壁模型的時間單位：實際邊長對應 gas.HEIGHT。
   const impactWindow = 1e-12 * gas.SPEED_UNIT * gas.HEIGHT / Math.cbrt(volume);
   const boltzmann = 1.380649e-23;
@@ -53,6 +55,7 @@
     const speeds = mixed ? [200, 600] : [400];
     const perGroup = state.particles.length / speeds.length;
     state.speedGroups = speeds.map(speed => ({ speed, count: perGroup }));
+    state.wallTransfers = [];
     // 每半箱有三組完整的四面體方向，改速率後三軸均方分量仍相同。
     state.particles.forEach((p, i) => {
       const speed = speeds[Math.floor(i / perGroup)];
@@ -62,6 +65,27 @@
       p.vz *= scale;
     });
     return state;
+  }
+
+  function advance(state, dt) {
+    if (!state.wallTransfers) return gas.advance(state, dt);
+    const remaining = Math.max(0, observationPs * impactWindow - state.time);
+    const events = gas.advance(state, Math.min(dt, remaining));
+    // 同一時間步可有多粒撞壁，累積曲線要依撞擊時間排列。
+    const rightHits = events.filter(hit => hit.axis === "x" && hit.side === 1).sort((a, b) => a.time - b.time);
+    let total = state.wallTransfers.at(-1)?.total ?? 0;
+    for (const hit of rightHits) {
+      const impulse = hit.impulse * mass * gas.SPEED_UNIT;
+      total += impulse;
+      state.wallTransfers.push({ ps: hit.time / impactWindow, height: hit.z / state.width, impulse, total });
+    }
+    return events;
+  }
+
+  function wallReading(state) {
+    const ps = state.time / impactWindow;
+    const total = state.wallTransfers.at(-1)?.total ?? 0;
+    return { ps, total, pressure: ps > 0 ? total / (ps * 1e-12 * wallArea) : null };
   }
 
   function readings(state) {
@@ -74,5 +98,5 @@
     const pressure = mass * x2 * gas.SPEED_UNIT ** 2 / volume;
     return { count, meanSpeed, meanSquare, pressure, mean, total: count * mean, temperature: 2 * mean / (3 * boltzmann) };
   }
-  return { create, createComparisonBox, setControls, readings, advance: gas.advance, defaults, mass, volume, impactWindow };
+  return { create, createComparisonBox, setControls, readings, advance, wallReading, defaults, mass, volume, wallArea, observationPs, impactWindow };
 });
