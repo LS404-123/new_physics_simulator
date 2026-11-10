@@ -5,14 +5,15 @@
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
   <title>分子撞壁與氣體壓強</title>
   <link rel="stylesheet" href="../thermometer-calibration-slope/katex/katex.min.css">
-  <link rel="stylesheet" href="style.css?v=counted-particles">
+  <link rel="stylesheet" href="style.css?v=thermal">
   <script defer src="../thermometer-calibration-slope/katex/katex.min.js"></script>
   <script defer src="../gas-laws/model.js"></script>
   <script defer src="../kinetic-gas/model.js"></script>
   <script defer src="model.js?v=counted-particles"></script>
+  <script defer src="thermal.js?v=thermal"></script>
   <script defer src="chamber-art.js"></script>
-  <script defer src="wall-view.js?v=counted-particles"></script>
-  <script defer src="app.js?v=counted-particles"></script>
+  <script defer src="wall-view.js?v=thermal"></script>
+  <script defer src="app.js?v=thermal"></script>
 </head>
 <body>
   <main class="lab">
@@ -20,6 +21,7 @@
       <div><nav aria-label="所在位置"><a href="../../index.html">‹　模擬器目錄</a><span>/</span>熱和氣體</nav>
         <h1>分子撞壁與氣體壓強</h1></div>
       <div class="actions"><button id="compare" aria-controls="count-settings" aria-expanded="false">逐粒計算平均值</button>
+        <label class="mode-switch"><input id="thermal-mode" type="checkbox" role="switch" aria-controls="distribution"><span aria-hidden="true"></span>真實情況</label>
         <button id="play"><span class="play-icon" aria-hidden="true"></span><span id="play-label">暫停</span></button>
         <button id="reset"><span class="reset-icon" aria-hidden="true">↺</span>重設</button></div>
     </header>
@@ -69,6 +71,26 @@
           <div id="sample-calculation"></div>
           <p id="sum-note" aria-live="polite" aria-atomic="true"></p>
         </section>
+        <section id="distribution" hidden aria-labelledby="distribution-title">
+          <h2 id="distribution-title">碰撞後的速率分佈</h2>
+          <p class="chart-question">最初各有一半粒子以 200 和 600 m/s 運動。碰撞後，還會只有兩種速率嗎？</p>
+          <div class="chart-legend"><span><i></i>模擬取樣</span><span><i></i>平衡理論值</span></div>
+          <svg id="speed-chart" viewBox="0 0 320 185" role="img" aria-labelledby="chart-description">
+            <title id="chart-description">全箱粒子速率分佈</title>
+            <text x="4" y="14">粒子數</text>
+            <path d="M28 35H300M28 90H300" class="grid-lines"/>
+            <path d="M28 34V145H300" class="chart-axes"/>
+            <g text-anchor="end"><text x="23" y="39" id="chart-max">12</text><text x="23" y="94" id="chart-mid">6</text><text x="23" y="148">0</text></g>
+            <g id="speed-bars"></g><path id="equilibrium-line"/>
+            <g text-anchor="middle"><text x="28" y="162">0</text><text x="113" y="162">400</text><text x="198" y="162">800</text><text x="291" y="162">1200+</text></g>
+            <text x="300" y="181" text-anchor="end">速率 (m/s)</text>
+          </svg>
+          <p class="chart-note" id="sampling-note"></p>
+          <dl class="thermal-readings">
+            <div><dt>粒子之間的碰撞</dt><dd><b id="collision-count">0</b> <span>次</span></dd></div>
+            <div><dt>右壁壓強（自開始起平均）</dt><dd><b id="wall-pressure">—</b> <span>kPa</span></dd></div>
+          </dl>
+        </section>
         <section class="relation" aria-labelledby="formula-title">
           <h2 id="formula-title">氣體分子運動論</h2>
           <div class="equation" aria-label="壓強乘體積等於三分之一乘分子數目、分子質量及速率平方的平均值">
@@ -78,6 +100,7 @@
           </div>
           <div class="legend"><span>與上一步比較</span><b class="up-key">↑ 增加</b><b class="down-key">↓ 減少</b></div>
           <p id="study-pressure" hidden>B 箱右壁的長時間平均壓強 <b id="box-pressure"></b> kPa</p>
+          <p id="thermal-mean" hidden>全箱速率平方的平均值　<b id="thermal-square"></b> m²/s²</p>
         </section>
         <section id="free-readings" class="readings" aria-labelledby="read-title"><h2 id="read-title">氣體讀數</h2>
           <dl>

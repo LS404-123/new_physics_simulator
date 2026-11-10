@@ -3,7 +3,8 @@
   const $ = id => document.getElementById(id);
   const { create, createMixedBox, countedSquares, setControls, readings, advance, defaults, impactWindow } = GasEnergy;
   const motion = matchMedia("(prefers-reduced-motion: reduce)");
-  let freeBox = create(), state = freeBox;
+  let freeBox = create(), mixedBox, state = freeBox, returnHash = "#mean-square";
+  let studyPaused = motion.matches;
   let paused = motion.matches, frame = 0, lastTime = null;
   $("chamber").innerHTML = chamberArt.svg;
   function svgNode(name, attrs) {
@@ -12,6 +13,34 @@
     return node;
   }
   const drawWall = createWallView(svgNode);
+  const bars = Array.from({ length: 16 }, (_, i) => svgNode("rect", { x: 29 + 17 * i, width: 15 }));
+  $("speed-bars").append(...bars);
+  let plottedCounts, lastThermalReadout = -1;
+  function drawDistribution(force = false) {
+    const t = state.thermal;
+    if (plottedCounts !== t.counts) {
+      plottedCounts = t.counts;
+      const top = Math.max(12, 2 * Math.ceil(Math.max(...t.counts, ...t.expected) / 2));
+      const y = count => 145 - 110 * count / top;
+      bars.forEach((bar, i) => {
+        bar.setAttribute("y", y(t.counts[i]));
+        bar.setAttribute("height", 145 - y(t.counts[i]));
+      });
+      $("chart-max").textContent = top;
+      $("chart-mid").textContent = top / 2;
+      $("equilibrium-line").setAttribute("d", t.expected.map((count, i) => (i ? "L" : "M") + (36.5 + i * 17) + " " + y(count)).join(" "));
+      $("sampling-note").textContent = (t.samples.length ? "柱高為最近 " + t.samples.length + " 次全箱取樣的平均粒子數。" : "柱高為開始時的粒子數。")
+        + "虛線為 Maxwell–Boltzmann 平衡分佈。";
+      $("chart-description").textContent = "全箱 24 粒，每欄 80 m/s，最後一欄為 1200 m/s 或以上。各欄粒子數：" + t.counts.map(n => n.toFixed(1)).join("、");
+    }
+    if (force || state.time - lastThermalReadout >= 0.25) {
+      lastThermalReadout = state.time;
+      $("collision-count").textContent = t.collisions;
+      $("thermal-square").textContent = Math.round(readings(state).meanSquare).toLocaleString("en-GB");
+      const pressure = ThermalGas.wallPressure(state);
+      $("wall-pressure").textContent = pressure === null ? "—" : (pressure / 1000).toFixed(2);
+    }
+  }
   // 氣箱和粒子的投影共用 Anatomy 產生的三個基向量。
   const [u, v, w] = chamberArt.basis;
   function project(p) {
@@ -64,6 +93,7 @@
     if ($("hit-count").textContent !== count) $("hit-count").textContent = count;
   }
   function drawParticles() {
+    if (state.thermal) { drawWall(state, state.particles.length); drawDistribution(); return; }
     if (state.speedGroups) { drawWall(state, Number($("included").value)); return; }
     const layer = $("particles");
     const order = state.particles.map((p, i) => {
@@ -138,7 +168,12 @@
   }
   function render(previous = null) {
     const data = readings(state);
-    if (state.speedGroups) showCountedParticles(data);
+    if (state.thermal) {
+      $("scene-title").textContent = "粒子互撞 · 24 粒氦原子";
+      $("atom-label").textContent = "氦原子";
+      $("slow-key").hidden = true;
+      drawDistribution(true);
+    } else if (state.speedGroups) showCountedParticles(data);
     else {
       $("scene-title").textContent = "分子觀察室";
       $("atom-label").textContent = "氦原子";
@@ -154,27 +189,42 @@
     drawParticles();
   }
   function startMixedBox() {
-    state = createMixedBox();
+    mixedBox = state = createMixedBox();
     $("included").max = $("included").value = state.particles.length;
   }
   function syncMode() {
-    const comparing = location.hash === "#mean-square";
-    if (comparing === Boolean(state.speedGroups)) return;
-    if (comparing) startMixedBox();
-    else state = freeBox;
+    const thermal = location.hash === "#thermal";
+    const comparing = location.hash === "#mean-square", flat = thermal || comparing;
+    if (thermal === Boolean(state.thermal) && comparing === Boolean(state.speedGroups)) return;
+    if (thermal) {
+      studyPaused = paused;
+      state = ThermalGas.create();
+      paused = true;
+    } else if (state.thermal) paused = studyPaused;
+    if (comparing && !mixedBox) startMixedBox();
+    else if (comparing) state = mixedBox;
+    else if (!thermal) state = freeBox;
+    $("thermal-mode").checked = thermal;
+    $("compare").hidden = thermal;
+    $("distribution").hidden = $("thermal-mean").hidden = !thermal;
     $("compare").setAttribute("aria-expanded", String(comparing));
     $("compare").textContent = comparing ? "返回自由調整" : "逐粒計算平均值";
-    $("free-settings").hidden = $("free-readings").hidden = comparing;
+    $("free-settings").hidden = $("free-readings").hidden = flat;
     $("count-settings").hidden = $("average-step").hidden = $("study-pressure").hidden = !comparing;
-    $("count-key").hidden = $("wall-study").hidden = $("wall-arrow-key").hidden = !comparing;
-    document.querySelector(".relation .legend").hidden = $("feedback").hidden = comparing;
-    $("chamber").toggleAttribute("hidden", comparing);
-    $("all-hits").hidden = $("hit-key").hidden = comparing;
+    $("count-key").hidden = !comparing;
+    $("wall-study").hidden = $("wall-arrow-key").hidden = !flat;
+    document.querySelector(".relation .legend").hidden = $("feedback").hidden = flat;
+    $("chamber").toggleAttribute("hidden", flat);
+    $("all-hits").hidden = $("hit-key").hidden = flat;
     lastTime = null;
     render();
     playback();
   }
   $("compare").addEventListener("click", () => { location.hash = state.speedGroups ? "" : "mean-square"; });
+  $("thermal-mode").addEventListener("change", event => {
+    if (event.target.checked) { returnHash = location.hash; location.hash = "thermal"; }
+    else location.hash = returnHash;
+  });
   window.addEventListener("hashchange", syncMode);
   $("included").addEventListener("input", () => render());
   for (const id of ["speed", "count"]) {
@@ -188,8 +238,12 @@
   }
   function tick(time) {
     if (lastTime !== null) {
-      const dt = Math.min(0.1, (time - lastTime) * (state.speedGroups ? 0.00095 : 0.00025));
-      advance(state, dt);
+      const elapsed = time - lastTime;
+      if (state.thermal) {
+        // 限制慢裝置每幀的工作量；取樣始終按模擬時間進行。
+        let dt = Math.min(0.3, elapsed * 0.004);
+        while (dt > 0) { const step = Math.min(0.1, dt); ThermalGas.advance(state, step); dt -= step; }
+      } else advance(state, Math.min(0.1, elapsed * (state.speedGroups ? 0.00095 : 0.00025)));
     }
     lastTime = time;
     drawParticles();
@@ -199,28 +253,30 @@
     cancelAnimationFrame(frame);
     lastTime = null;
     document.body.classList.toggle("paused", paused);
-    $("play-label").textContent = paused ? "播放" : "暫停";
+    $("play-label").textContent = paused ? (state.thermal && !state.time ? "開始碰撞" : "播放") : "暫停";
     $("run-status").textContent = paused ? "已暫停" : "慢鏡播放";
     if (!paused && !document.hidden) frame = requestAnimationFrame(tick);
   }
   $("play").addEventListener("click", () => {
     paused = !paused;
+    if (paused && state.thermal) drawDistribution(true);
     playback();
   });
   $("reset").addEventListener("click", () => {
-    if (state.speedGroups) startMixedBox();
+    if (state.thermal) state = ThermalGas.create();
+    else if (state.speedGroups) startMixedBox();
     else {
       freeBox = state = create();
       $("speed").value = defaults.speed;
       $("count").value = defaults.count;
     }
-    paused = motion.matches;
+    paused = Boolean(state.thermal) || motion.matches;
     render();
     playback();
   });
   motion.addEventListener("change", () => { paused = motion.matches; playback(); });
   document.addEventListener("visibilitychange", playback);
-  if (location.hash === "#mean-square") syncMode();
+  if (location.hash === "#mean-square" || location.hash === "#thermal") syncMode();
   else render();
   playback();
 })();

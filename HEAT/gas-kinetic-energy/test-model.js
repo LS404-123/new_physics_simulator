@@ -47,3 +47,32 @@ close(all.groups[1].sum / all.sum, 0.9);
 close(beforeCounting.pressure * model.volume, model.mass * all.sum / 3);
 assert.deepEqual(model.readings(box), beforeCounting);
 console.log("通過：三維撞壁、B 箱逐粒計數、快慢兩組的平方總和、全箱平均值與壓強。");
+
+const thermal = require("./thermal.js");
+const pair = thermal.create();
+const [a, b] = pair.particles;
+pair.particles = [a, b];
+const d = 2 * pair.thermal.radius;
+Object.assign(a, { x: 0.5, y: 0.5, z: 0.5, vx: 1, vy: 0, vz: 0 });
+Object.assign(b, { x: 0.55 + d / Math.sqrt(2), y: 0.5 + d / Math.sqrt(2), z: 0.5, vx: 0, vy: 0, vz: 0 });
+thermal.advance(pair, 0.1);
+assert.equal(pair.thermal.collisions, 1);
+close(a.vx, 0.5); close(a.vy, -0.5); close(b.vx, 0.5); close(b.vy, 0.5);
+
+const evolving = thermal.create();
+assert.deepEqual(evolving.thermal.counts.filter(Boolean), [12, 12]);
+assert.equal(thermal.wallPressure(evolving), null);
+const initialSquare = model.readings(evolving).meanSquare;
+const distance = counts => counts.reduce((sum, n, i) => sum + Math.abs(n - evolving.thermal.expected[i]), 0) / 48;
+assert.ok(distance(evolving.thermal.counts) > 0.6);
+const accumulated = evolving.thermal.counts.map(() => 0);
+for (let i = 0; i < 2400; i++) {
+  thermal.advance(evolving, 0.1);
+  if (i >= 800 && i % 10 === 0) thermal.histogram(evolving.particles).forEach((n, j) => accumulated[j] += n / 160);
+}
+close(model.readings(evolving).meanSquare, initialSquare);
+close(evolving.thermal.counts.reduce((sum, n) => sum + n, 0), 24);
+assert.ok(evolving.particles.every(p => [p.x,p.y,p.z].every(x => x >= evolving.thermal.radius - 1e-9 && x <= evolving.width - evolving.thermal.radius + 1e-9)));
+assert.ok(thermal.wallPressure(evolving) > 0);
+assert.ok(evolving.thermal.collisions > 100 && distance(accumulated) < 0.1);
+console.log("通過：斜碰的三維硬球交換動量、總動能守恆，實際速率由兩峰演化至與平衡分佈相符。");

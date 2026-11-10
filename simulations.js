@@ -216,12 +216,12 @@
     },
     {
       title: "分子撞壁與氣體壓強",
-      description: "調整分子速率與數目，觀察六面撞壁。在 B 箱逐粒計入快、慢粒子的速率平方，找出全箱平均平方速率與壓強的關係。",
+      description: "觀察撞壁與壓強，在 B 箱逐粒計入速率平方，或切換至真實情況，觀察粒子互撞後的速率分佈。",
       topic: "熱和氣體",
       subtopic: "氣體",
       href: "./HEAT/gas-kinetic-energy/index.html",
       image: "./HEAT/gas-kinetic-energy/preview.png",
-      tags: ["氣體分子運動論", "速率", "粒子數目", "撞壁", "平均平方速率", "壓強", "pV", "三維"]
+      tags: ["氣體分子運動論", "速率", "粒子數目", "撞壁", "平均平方速率", "壓強", "pV", "三維", "Maxwell–Boltzmann", "速率分佈"]
     }
   ];
 
