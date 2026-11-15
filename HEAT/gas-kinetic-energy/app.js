@@ -13,8 +13,11 @@
     return node;
   }
   const drawWall = createWallView(svgNode);
-  const bars = Array.from({ length: 16 }, (_, i) => svgNode("rect", { x: 29 + 17 * i, width: 15 }));
+  const barWidth = 272 / ThermalGas.bins;
+  const bars = Array.from({ length: ThermalGas.bins }, (_, i) => svgNode("rect", { x: 29 + barWidth * i, width: barWidth - 2 }));
   $("speed-bars").append(...bars);
+  const temperatureSlider = $("temperature");
+  Object.assign(temperatureSlider, ThermalGas.temperatureRange);
   let plottedCounts, lastThermalReadout = -1;
   function drawDistribution(force = false) {
     const t = state.thermal;
@@ -28,10 +31,12 @@
       });
       $("chart-max").textContent = top;
       $("chart-mid").textContent = top / 2;
-      $("equilibrium-line").setAttribute("d", t.expected.map((count, i) => (i ? "L" : "M") + (36.5 + i * 17) + " " + y(count)).join(" "));
-      $("sampling-note").textContent = (t.samples.length ? "柱高為最近 " + t.samples.length + " 次全箱取樣的平均粒子數。" : "柱高為開始時的粒子數。")
-        + "虛線為 Maxwell–Boltzmann 平衡分佈。";
-      $("chart-description").textContent = "全箱 " + state.particles.length + " 粒，每欄 80 m/s，最後一欄為 1200 m/s 或以上。各欄粒子數：" + t.counts.map(n => n.toFixed(1)).join("、");
+      for (const [id, counts] of [["equilibrium-line", t.expected], ["reference-line", t.reference]]) {
+        $(id).setAttribute("d", counts.map((count, i) => (i ? "L" : "M") + (28 + barWidth * (i + 0.5)) + " " + y(count)).join(" "));
+      }
+      $("sampling-note").textContent = (t.samples.length ? "綠柱為最近 " + t.samples.length + " 次取樣平均。" : "綠柱為當刻粒子數。")
+        + "兩線為 Maxwell–Boltzmann 平衡理論值。";
+      $("chart-description").textContent = "全箱 " + state.particles.length + " 粒，每欄 80 m/s，最後一欄為 1840 m/s 或以上。各欄粒子數：" + t.counts.map(n => n.toFixed(1)).join("、");
     }
     if (force || state.time - lastThermalReadout >= 0.25) {
       lastThermalReadout = state.time;
@@ -40,6 +45,23 @@
       const pressure = ThermalGas.wallPressure(state);
       $("wall-pressure").textContent = pressure === null ? "—" : (pressure / 1000).toFixed(2);
     }
+  }
+  function showTemperature(data) {
+    const initial = state.thermal.initialTemperature;
+    const ratio = data.temperature / initial;
+    temperatureSlider.value = ratio;
+    temperatureSlider.style.setProperty("--pct", (ratio - temperatureSlider.min) / (temperatureSlider.max - temperatureSlider.min) * 100 + "%");
+    temperatureSlider.setAttribute("aria-valuetext", data.temperature.toFixed(1) + " K，初始溫度的 " + ratio.toFixed(2) + " 倍");
+    $("temperature-out").textContent = data.temperature.toFixed(1) + " K";
+    $("temperature-min").textContent = (initial * temperatureSlider.min).toFixed(1) + " K";
+    $("temperature-max").textContent = (initial * temperatureSlider.max).toFixed(1) + " K";
+    $("reference-label").textContent = "初始 " + initial.toFixed(1) + " K";
+    $("current-label").textContent = "目前 " + data.temperature.toFixed(1) + " K";
+    const change = Math.abs(ratio - 1) < 1e-9 ? "same" : ratio > 1 ? "up" : "down";
+    $("distribution").dataset.temperatureChange = $("temperature-control").dataset.temperatureChange = change;
+    $("temperature-effect").textContent = change === "same"
+      ? "調整溫度，觀察平衡分佈的峰位、闊度和高度。全箱總數始終是 80 粒。"
+      : "平均動能為初始的 " + ratio.toFixed(2) + " 倍。平衡分佈" + (change === "up" ? "向高速移、變闊；總數仍是 80 粒，峰值降低。" : "向低速移、變窄；總數仍是 80 粒，峰值升高。");
   }
   // 氣箱和粒子的投影共用 Anatomy 產生的三個基向量。
   const [u, v, w] = chamberArt.basis;
@@ -172,6 +194,7 @@
       $("scene-title").textContent = "粒子互撞 · " + data.count + " 粒氦原子";
       $("atom-label").textContent = "氦原子";
       $("slow-key").hidden = true;
+      showTemperature(data);
       drawDistribution(true);
     } else if (state.speedGroups) showCountedParticles(data);
     else {
@@ -207,6 +230,7 @@
     $("thermal-mode").checked = thermal;
     $("compare").hidden = thermal;
     $("distribution").hidden = $("thermal-mean").hidden = !thermal;
+    $("temperature-control").hidden = !thermal;
     $("compare").setAttribute("aria-expanded", String(comparing));
     $("compare").textContent = comparing ? "返回自由調整" : "逐粒計算平均值";
     $("free-settings").hidden = $("free-readings").hidden = flat;
@@ -227,6 +251,11 @@
   });
   window.addEventListener("hashchange", syncMode);
   $("included").addEventListener("input", () => render());
+  temperatureSlider.addEventListener("input", () => {
+    const before = readings(state);
+    ThermalGas.setTemperature(state, state.thermal.initialTemperature * Number(temperatureSlider.value));
+    render(before);
+  });
   for (const id of ["speed", "count"]) {
     $(id).addEventListener("input", () => {
       const count = Number($("count").value), speed = Number($("speed").value);

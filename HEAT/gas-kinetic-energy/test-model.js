@@ -82,3 +82,64 @@ assert.ok(evolving.particles.every(p => [p.x,p.y,p.z].every(x => x >= evolving.t
 assert.ok(thermal.wallPressure(evolving) > 0);
 assert.ok(evolving.thermal.collisions > 100 && distance(accumulated) < 0.1);
 console.log("通過：斜碰的三維硬球交換動量、總動能守恆，實際速率由兩峰演化至與平衡分佈相符。");
+
+const initialTemperature = evolving.thermal.initialTemperature;
+const baseline = evolving.thermal.reference.slice();
+const peak = counts => counts.indexOf(Math.max(...counts));
+for (const ratio of [4, 0.5, 1]) {
+  const prior = model.readings(evolving);
+  const particles = structuredClone(evolving.particles);
+  const scale = Math.sqrt(initialTemperature * ratio / prior.temperature);
+  thermal.setTemperature(evolving, initialTemperature * ratio);
+  close(model.readings(evolving).temperature, initialTemperature * ratio);
+  close(model.readings(evolving).meanSquare, initialSquare * ratio);
+  assert.deepEqual(evolving.thermal.reference, baseline);
+  assert.equal(evolving.thermal.samples.length, 0);
+  assert.equal(thermal.wallPressure(evolving), null);
+  assert.equal(evolving.hits.length, 0);
+  assert.deepEqual(evolving.thermal.counts, thermal.histogram(evolving.particles));
+  evolving.particles.forEach((p, i) => {
+    for (const axis of ["x", "y", "z"]) {
+      assert.equal(p[axis], particles[i][axis]);
+      close(p["v" + axis], particles[i]["v" + axis] * scale);
+    }
+  });
+  close(evolving.thermal.expected.reduce((sum, count) => sum + count, 0), 80);
+  if (ratio > 1) {
+    assert.ok(peak(evolving.thermal.expected) > peak(baseline));
+    assert.ok(Math.max(...evolving.thermal.expected) < Math.max(...baseline));
+  }
+  if (ratio < 1) {
+    assert.ok(peak(evolving.thermal.expected) < peak(baseline));
+    assert.ok(Math.max(...evolving.thermal.expected) > Math.max(...baseline));
+  }
+  for (let i = 0; i < 21; i++) thermal.advance(evolving, 0.1);
+  close(model.readings(evolving).temperature, initialTemperature * ratio);
+  assert.equal(evolving.thermal.samples.length, 4);
+  close(evolving.thermal.counts.reduce((sum, count) => sum + count, 0), 80);
+}
+// 改變參考線的數據，仍須產生完全相同的碰撞和統計。
+const alteredReference = structuredClone(evolving);
+alteredReference.thermal.expected.fill(0);
+alteredReference.thermal.reference.fill(0);
+for (let i = 0; i < 10; i++) {
+  thermal.advance(evolving, 0.1);
+  thermal.advance(alteredReference, 0.1);
+}
+assert.deepEqual(evolving.particles, alteredReference.particles);
+assert.deepEqual(evolving.thermal.counts, alteredReference.thermal.counts);
+const unchanged = structuredClone(evolving);
+for (const temperature of [0, -1, NaN, Infinity, initialTemperature * 0.49, initialTemperature * 4.01]) {
+  assert.throws(() => thermal.setTemperature(evolving, temperature), RangeError);
+  assert.deepEqual(evolving, unchanged);
+}
+// 同一次調溫後的壓強應與之前已運行多久無關。
+const fresh = thermal.create(), later = thermal.create();
+later.time = 100;
+for (const box of [fresh, later]) thermal.setTemperature(box, box.thermal.initialTemperature * 2);
+for (let i = 0; i < 10; i++) {
+  thermal.advance(fresh, 0.1);
+  thermal.advance(later, 0.1);
+}
+close(thermal.wallPressure(fresh), thermal.wallPressure(later));
+console.log("通過：調溫縮放速度與動能、固定初溫參考、80 粒統計守恆、清除舊溫度取樣及壓強、輸入範圍與理論線獨立性。");

@@ -4,8 +4,9 @@
 })(globalThis, function (energy, gas) {
   "use strict";
   const axes = ["x", "y", "z"];
-  const binWidth = 80, bins = 16; // 最後一欄包含 1200 m/s 或以上。
+  const binWidth = 80, bins = 24; // 最後一欄包含 1840 m/s 或以上，容納升溫後的高速尾部。
   const sampleStep = 0.5, windowSize = 32;
+  const temperatureRange = { min: 0.5, max: 4, step: 0.05 };
 
   function histogram(particles) {
     const counts = Array(bins).fill(0);
@@ -47,9 +48,30 @@
       }
     });
     const initial = histogram(box.particles);
-    box.thermal = { radius, collisions: 0, rightImpulse: 0, samples: [], counts: initial, nextSample: sampleStep,
-      expected: equilibriumCounts(energy.readings(box).meanSquare, box.particles.length) };
+    const reading = energy.readings(box);
+    const expected = equilibriumCounts(reading.meanSquare, box.particles.length);
+    box.thermal = { radius, collisions: 0, rightImpulse: 0, pressureStart: 0, samples: [], counts: initial, nextSample: sampleStep,
+      initialTemperature: reading.temperature, reference: expected.slice(), expected };
     return box;
+  }
+
+  function setTemperature(box, temperature) {
+    const t = box.thermal, ratio = temperature / t.initialTemperature;
+    if (!Number.isFinite(temperature) || ratio < temperatureRange.min || ratio > temperatureRange.max) {
+      throw new RangeError("溫度須介乎初溫的 0.5 至 4 倍");
+    }
+    // 調溫只按動能比例縮放現有速度，分佈仍由粒子運動與互撞決定。
+    const scale = Math.sqrt(temperature / energy.readings(box).temperature);
+    for (const p of box.particles) {
+      p.vx *= scale; p.vy *= scale; p.vz *= scale;
+    }
+    t.expected = equilibriumCounts(energy.readings(box).meanSquare, box.particles.length);
+    t.samples = [];
+    t.counts = histogram(box.particles);
+    t.nextSample = box.time + sampleStep;
+    t.pressureStart = box.time;
+    t.rightImpulse = 0;
+    box.hits = [];
   }
 
   function fly(box, duration) {
@@ -125,8 +147,8 @@
 
   function wallPressure(box) {
     const side = Math.cbrt(energy.volume);
-    const seconds = box.time * side / (box.width * gas.SPEED_UNIT);
+    const seconds = (box.time - box.thermal.pressureStart) * side / (box.width * gas.SPEED_UNIT);
     return seconds ? box.thermal.rightImpulse * energy.mass * gas.SPEED_UNIT / (side ** 2 * seconds) : null;
   }
-  return { create, advance, histogram, equilibriumCounts, binWidth, wallPressure };
+  return { create, advance, setTemperature, temperatureRange, histogram, equilibriumCounts, binWidth, bins, wallPressure };
 });

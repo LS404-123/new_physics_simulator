@@ -5,15 +5,15 @@
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
   <title>分子撞壁與氣體壓強</title>
   <link rel="stylesheet" href="../thermometer-calibration-slope/katex/katex.min.css">
-  <link rel="stylesheet" href="style.css?v=thermal">
+  <link rel="stylesheet" href="style.css?v=temperature">
   <script defer src="../thermometer-calibration-slope/katex/katex.min.js"></script>
   <script defer src="../gas-laws/model.js"></script>
   <script defer src="../kinetic-gas/model.js"></script>
   <script defer src="model.js?v=thermal80"></script>
-  <script defer src="thermal.js?v=thermal80"></script>
+  <script defer src="thermal.js?v=temperature"></script>
   <script defer src="chamber-art.js"></script>
   <script defer src="wall-view.js?v=thermal80"></script>
-  <script defer src="app.js?v=thermal80"></script>
+  <script defer src="app.js?v=temperature"></script>
 </head>
 <body>
   <main class="lab">
@@ -27,7 +27,13 @@
     </header>
     <section class="bench" aria-label="氣箱及粒子設定">
       <section class="scene" aria-labelledby="scene-title">
-        <div class="scene-heading"><h2 id="scene-title">分子觀察室</h2><span class="state"><i></i><span id="run-status">慢鏡播放</span></span></div>
+        <div class="scene-heading"><h2 id="scene-title">分子觀察室</h2>
+          <div id="temperature-control" hidden>
+            <label for="temperature">溫度 <i>T</i><output id="temperature-out" for="temperature"></output></label>
+            <input type="range" id="temperature" aria-describedby="temperature-method">
+            <div class="ends"><span id="temperature-min"></span><span id="temperature-max"></span></div>
+          </div>
+          <span class="state"><i></i><span id="run-status">慢鏡播放</span></span></div>
         <svg id="chamber" viewBox="58 34 404 410" role="img" aria-label="立方氣箱內的氦原子向各方向運動。青綠色光圈在六面容器壁的實際撞點向外擴散。"></svg>
         <div id="wall-study" hidden>
           <svg id="flat-chamber" viewBox="0 0 370 264" role="img" aria-label="立方氣箱的二維正視投影。右側青綠色直線代表量度壁面，向右箭嘴愈長，表示單次傳給壁面的垂直動量愈大。">
@@ -72,24 +78,30 @@
           <p id="sum-note" aria-live="polite" aria-atomic="true"></p>
         </section>
         <section id="distribution" hidden aria-labelledby="distribution-title">
-          <h2 id="distribution-title">碰撞後的速率分佈</h2>
-          <p class="chart-question">最初各有一半粒子以 200 和 600 m/s 運動。碰撞後，還會只有兩種速率嗎？</p>
-          <div class="chart-legend"><span><i></i>模擬取樣</span><span><i></i>平衡理論值</span></div>
+          <h2 id="distribution-title">速率分佈與溫度</h2>
+          <p class="chart-question">先播放至分佈穩定，再調溫比較。</p>
+          <div class="chart-legend">
+            <span><i></i>粒子取樣</span>
+            <span class="reference-key"><i></i><span id="reference-label"></span></span>
+            <span class="current-key"><i></i><span id="current-label"></span></span>
+          </div>
           <svg id="speed-chart" viewBox="0 0 320 185" role="img" aria-labelledby="chart-description">
             <title id="chart-description">全箱粒子速率分佈</title>
             <text x="4" y="14">粒子數</text>
             <path d="M28 35H300M28 90H300" class="grid-lines"/>
             <path d="M28 34V145H300" class="chart-axes"/>
             <g text-anchor="end"><text x="23" y="39" id="chart-max"></text><text x="23" y="94" id="chart-mid"></text><text x="23" y="148">0</text></g>
-            <g id="speed-bars"></g><path id="equilibrium-line"/>
-            <g text-anchor="middle"><text x="28" y="162">0</text><text x="113" y="162">400</text><text x="198" y="162">800</text><text x="291" y="162">1200+</text></g>
+            <g id="speed-bars"></g><path id="reference-line"/><path id="equilibrium-line"/>
+            <g text-anchor="middle"><text x="28" y="162">0</text><text x="113" y="162">600</text><text x="198" y="162">1200</text><text x="291" y="162">1840+</text></g>
             <text x="300" y="181" text-anchor="end">速率 (m/s)</text>
           </svg>
           <p class="chart-note" id="sampling-note"></p>
+          <p id="temperature-effect" aria-live="polite"></p>
           <dl class="thermal-readings">
             <div><dt>粒子之間的碰撞</dt><dd><b id="collision-count">0</b> <span>次</span></dd></div>
-            <div><dt>右壁壓強（自開始起平均）</dt><dd><b id="wall-pressure">—</b> <span>kPa</span></dd></div>
+            <div><dt>右壁壓強（本溫度下平均）</dt><dd><b id="wall-pressure">—</b> <span>kPa</span></dd></div>
           </dl>
+          <p id="temperature-method" class="chart-note">調溫以同比例改變粒子速率，調溫後重新取樣。</p>
         </section>
         <section class="relation" aria-labelledby="formula-title">
           <h2 id="formula-title">氣體分子運動論</h2>
