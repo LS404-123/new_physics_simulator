@@ -222,6 +222,15 @@
       href: "./HEAT/gas-kinetic-energy/index.html",
       image: "./HEAT/gas-kinetic-energy/preview.png",
       tags: ["氣體分子運動論", "速率", "粒子數目", "撞壁", "平均平方速率", "壓強", "pV", "三維", "Maxwell–Boltzmann", "速率分佈"]
+    },
+    {
+      title: "第 5 題：孔明燈為甚麼升起？",
+      description: "依 (a)–(e) 觀察氣流、辨認對流、找出起飛溫度、計算淨流出分子數，再比較表面散熱。",
+      topic: "DSE問題",
+      subtopic: "氣體",
+      href: "./HEAT/kongming-lantern/index.html",
+      image: "./HEAT/kongming-lantern/preview.png",
+      tags: ["DSE問題", "孔明燈", "對流", "密度", "氣體", "浮力", "絕對溫度", "分子數", "輻射", "Anatomy", "Kongming lantern"]
     }
   ];
 

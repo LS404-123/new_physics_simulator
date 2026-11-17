@@ -38,16 +38,18 @@ for (const topic of new Set(simulations.map(item => item.topic))) {
   });
 }
 
-assert.deepEqual(groupBySubtopic(simulations).map(([, cards]) => cards.length), [6, 4, 3, 7]);
+assert.deepEqual(groupBySubtopic(simulations).map(([, cards]) => cards.length), [6, 4, 3, 9]);
 const dseGroups = groupBySubtopic(simulations.filter(item => item.topic === "DSE問題"));
 assert.deepEqual(dseGroups.map(([name, cards]) => [name, cards.map(item => item.href)]), [
   ["溫度、熱和內能", ["./HEAT/resistance-thermometer-graph/index.html"]],
-  ["氣體", ["./HEAT/basketball-pressure/index.html"]],
+  ["氣體", ["./HEAT/basketball-pressure/index.html", "./HEAT/kongming-lantern/index.html"]],
 ], "DSE問題也須按正式子課題分組，保留所屬物理主題資料夾");
 const searched = simulations.filter(item => matchesSearch(item, "熱轉移過程"));
 assert.equal(searched.length, 4);
 assert.deepEqual(groupBySubtopic(searched).map(([name]) => name), ["熱轉移過程"], "搜尋後不顯示空的子主題");
-assert.equal(simulations.filter(item => matchesSearch(item, "dse問題")).length, 2, "保留試題來源搜尋");
+assert.equal(simulations.filter(item => matchesSearch(item, "dse問題")).length, 3, "保留試題來源搜尋");
+assert.equal(simulations.at(-1).href, "./HEAT/kongming-lantern/index.html", "孔明燈須顯示為最新加入");
+assert.deepEqual(simulations.filter(item => matchesSearch(item, "孔明燈")).map(item => item.href), ["./HEAT/kongming-lantern/index.html"]);
 assert.ok(matchesSearch(simulations.find(item => item.href === "./HEAT/gas-laws/index.html"), "boyle"));
 assert.deepEqual(groupBySubtopic([]), []);
 assert.deepEqual(simulations.map(item => item.href), originalOrder, "分組不可改動原始清單及最新加入項目");
