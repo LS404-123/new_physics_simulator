@@ -64,6 +64,8 @@ for (const time of [16, 17, 18]) {
   assert.equal(L.flight(time).status, "neutral");
   close(L.flight(time).celsius, L.CRITICAL);
 }
+assert.ok(L.flight(18.1).lift > 0, "越過臨界後，時間軸的下一格應開始離開起點");
+assert.ok(L.flight(L.FLIGHT_DURATION).lift > L.flight(18.1).lift, "重播至結尾應能看見燈繼續升高");
 assert.equal(L.flight(L.FLIGHT_DURATION).complete, true);
 assert.deepEqual(L.flight(100), L.flight(L.FLIGHT_DURATION));
 for (const boundary of [3, 8, 16, 18, 21, 24, 28]) {

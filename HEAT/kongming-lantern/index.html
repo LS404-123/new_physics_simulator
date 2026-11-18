@@ -3,10 +3,8 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-  <title>第 5 題・孔明燈為甚麼升起？</title>
-  <link rel="stylesheet" href="../thermometer-calibration-slope/katex/katex.min.css">
+  <title>孔明燈為甚麼升起？</title>
   <link rel="stylesheet" href="style.css">
-  <script defer src="../thermometer-calibration-slope/katex/katex.min.js"></script>
   <script defer src="model.js"></script>
   <script defer src="lantern-art.js"></script>
   <script defer src="app.js"></script>
@@ -14,112 +12,67 @@
 <body>
 <main class="app">
   <header class="topbar">
-    <h1>第 5 題 <span>孔明燈為甚麼升起？</span></h1>
-    <div class="header-actions"><button id="motion" aria-pressed="true">暫停動畫</button><button id="reset">重設</button><a href="../../index.html">目錄</a></div>
+    <h1>孔明燈為甚麼升起？</h1>
+    <a href="../../index.html">返回目錄</a>
   </header>
-  <nav class="questions" aria-label="按小題探索">
-    <button data-step="a" aria-current="step"><b>(a)</b> 氣流方向</button>
-    <button data-step="b"><b>(b)</b> 傳熱方式</button>
-    <button data-step="c"><b>(c)</b> 起飛溫度</button>
-    <button data-step="d"><b>(d)</b> 流出分子</button>
-    <button data-step="e"><b>(e)</b> 表面顏色</button>
-  </nav>
-  <div class="givens" aria-label="原題已知條件"><span>體積 <b>0.25 m³</b></span><span>燈身 <b>80 g</b></span><span>外界 <b>27°C</b></span><span>氣壓 <b>100 kPa</b></span><span>外界密度 <b>1.16 kg/m³</b></span></div>
   <div class="workspace">
-    <section class="scene" aria-labelledby="scene-title">
-      <div class="scene-heading"><h2 id="scene-title">點火後，空氣往哪裡流？</h2><span id="flight-state" role="status">尚未升起</span></div>
-      <svg id="scene" viewBox="0 0 640 440" role="img" aria-labelledby="scene-description">
-        <title id="scene-description">底部開口的圓柱形孔明燈剖面</title>
+    <figure class="scene">
+      <figcaption>孔明燈剖面</figcaption>
+      <svg id="scene" viewBox="84 -24 484 430" role="img" aria-labelledby="scene-description" aria-describedby="force-comparison">
+        <title id="scene-description">孔明燈底部開口。圓點顯示氣流，箭嘴比較浮力和整盞燈的總重量。</title>
+        <desc id="force-comparison"></desc>
         <defs>
-          <marker id="warm-arrow" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="5" markerHeight="5" orient="auto-start-reverse"><path d="M1 1 8 5 1 9" fill="none" stroke="#a95530" stroke-width="1.7"/></marker>
-          <marker id="cool-arrow" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="5" markerHeight="5" orient="auto-start-reverse"><path d="M1 1 8 5 1 9" fill="none" stroke="#247b9d" stroke-width="1.7"/></marker>
+          <marker id="warm-arrow" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="5" markerHeight="5" orient="auto"><path d="M1 1 8 5 1 9" fill="none" stroke="#a95530" stroke-width="1.7"/></marker>
+          <marker id="cool-arrow" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="5" markerHeight="5" orient="auto"><path d="M1 1 8 5 1 9" fill="none" stroke="#247b9d" stroke-width="1.7"/></marker>
         </defs>
-        <path id="launch-line" d="M135 412H480" stroke="#c9dce3" stroke-width="2"/>
+        <path id="launch-line" d="M146 356H424" fill="none" stroke="#9eb6bf" stroke-dasharray="4 4"/>
+        <text x="202" y="380" text-anchor="end" class="annotation">起飛前的位置</text>
         <g id="lamp">
           <g id="art-back"></g>
-          <g id="air-dots" aria-hidden="true"></g>
-          <g id="escaped-dots" aria-hidden="true"></g>
-          <g id="flow-arrows" fill="none" stroke-width="3.5">
+          <g id="air-dots"></g>
+          <g id="flow-arrows" fill="none" stroke-width="2.8">
             <path id="up-flow" stroke="#a95530" marker-end="url(#warm-arrow)"/>
             <path id="left-flow" stroke="#247b9d" marker-end="url(#cool-arrow)"/>
             <path id="right-flow" stroke="#247b9d" marker-end="url(#cool-arrow)"/>
             <path id="return-flow" stroke="#247b9d"/>
           </g>
-          <g id="flow-labels"><text id="hot-label" class="warm-text">受熱上升</text><text id="cold-label" text-anchor="end">較冷下降</text></g>
-          <g id="radiation-rays" fill="none" stroke="#a95530" stroke-width="2.5" aria-hidden="true"></g>
           <g id="art-front"></g>
           <g id="flame" fill="#c26a32"><path d="M-12 0Q-23-17-8-33Q-9-15-1-20Q10-26 4-45Q28-18 13 0Z"/><path d="M-4 0Q-8-12 3-22Q1-8 8 0Z" fill="#f2bd61"/></g>
-          <text text-anchor="middle" class="small" id="opening-label">底部開口・燃料在中央</text>
           <g id="outflow" fill="none" stroke="#a95530" stroke-width="3" marker-end="url(#warm-arrow)"><path id="out-left"/><path id="out-right"/></g>
-          <g id="forces">
+          <path d="M128 322h58l34 15" fill="none" stroke="#758b94"/>
+          <text x="128" y="314" class="annotation">底部開口</text>
+          <g class="forces">
             <path id="buoyancy-arrow" stroke="#247b9d" stroke-width="4" marker-end="url(#cool-arrow)"/>
             <path id="weight-arrow" stroke="#a95530" stroke-width="4" marker-end="url(#warm-arrow)"/>
-            <text x="469" y="170">浮力</text><text x="469" y="192" id="buoyancy-label" class="cool-text"></text>
-            <text x="469" y="290">總重量</text><text x="469" y="312" id="weight-label" class="warm-text"></text>
+            <text x="442" y="172">浮力</text><text x="442" y="194" id="buoyancy-label" class="cool-text"></text>
+            <text x="442" y="285">總重量</text><text x="442" y="307" id="weight-label" class="warm-text"></text>
           </g>
         </g>
       </svg>
-      <p class="scene-caption" id="scene-caption">先加熱，再觀察空氣的循環方向。</p>
-      <div class="temperature-controls">
-        <div class="temperature-heading"><label for="temperature">燈內平均溫度</label><output id="temperature-out" for="temperature">27.0°C <small>300.0 K</small></output></div>
-        <div class="temperature-row"><span>27°C</span><input id="temperature" type="range" min="27" max="220" step="0.1" value="27"><span>220°C</span><button id="heat" class="primary" aria-pressed="false">逐步加熱</button></div>
+    </figure>
+    <div class="playback">
+      <button type="button" id="play">點火</button>
+      <div class="timeline">
+        <div><label for="progress">播放進度</label><span id="clock"></span></div>
+        <input id="progress" type="range" min="0" step="0.1" value="0">
       </div>
+      <button type="button" id="reset">重設</button>
+    </div>
+    <section class="observations" aria-labelledby="moment">
+      <div class="narration" aria-live="polite" aria-atomic="true">
+        <h2 id="moment">點火前</h2>
+        <p id="explanation">燈內外的空氣同溫。加上燈身和燃料後，整盞燈的總重量大於浮力，需要承托。</p>
+      </div>
+      <dl class="readings">
+        <div><dt>燈內平均溫度</dt><dd id="temperature"></dd></div>
+        <div><dt>燈內空氣質量</dt><dd id="air-mass"></dd></div>
+        <div><dt>燈身連燃料</dt><dd>80 g</dd></div>
+        <div class="total"><dt>整盞燈的總質量</dt><dd id="total-mass"></dd></div>
+      </dl>
+      <p class="conditions">燈罩體積固定為 0.25 m³，外界氣溫為 27°C，空氣密度為 1.16 kg/m³。</p>
     </section>
-    <aside aria-labelledby="part-title">
-      <div class="question-heading"><span id="part-number">(a)</span><h2 id="part-title">畫出燈內氣流方向</h2><span id="marks">1 分</span></div>
-      <p id="question-prompt">燃料加熱附近的空氣。觀察圓點怎樣移動，再嘗試畫出方向。</p>
-      <div class="part" id="part-a">
-        <button id="arrows" class="wide" aria-pressed="false">顯示氣流方向</button>
-        <div class="explanation" id="flow-explanation" hidden><h3>由中央上升，沿兩旁回流</h3><p>靠近燃料的空氣受熱、密度下降，向上流動；較冷的空氣沿兩旁下降，形成循環。</p></div>
-        <div class="observation"><span class="dot warm-dot"></span>較熱的空氣<span class="dot cool-dot"></span>較冷的空氣</div>
-        <p class="quiet">箭嘴表示整體氣流，並非單一分子的無規運動。</p>
-      </div>
-      <div class="part" id="part-b" hidden>
-        <div class="choices" aria-label="選擇傳熱方式"><button data-transfer="conduction" aria-pressed="false">傳導</button><button data-transfer="convection" aria-pressed="false">對流</button><button data-transfer="radiation" aria-pressed="false">輻射</button></div>
-        <p id="transfer-feedback" class="explanation" role="status">選出由空氣流動帶走能量的傳熱方式。</p>
-        <div class="process"><span>空氣受熱</span><span>密度下降並上升</span><span>流動的空氣攜帶能量</span></div>
-      </div>
-      <div class="part" id="part-c" hidden>
-        <div id="flight-story" hidden>
-          <ol class="flight-steps" aria-label="由加熱到起飛的過程">
-            <li><span>1</span>燃料加熱燈內空氣</li>
-            <li><span>2</span>空氣膨脹，部分由底部流出</li>
-            <li><span>3</span>空氣質量減少，總重量下降</li>
-            <li><span>4</span>浮力大於整盞燈的總重量</li>
-            <li><span>5</span>合力向上，孔明燈升起</li>
-          </ol>
-          <dl class="flight-readings"><div><dt>燈內空氣</dt><dd id="flight-air"></dd></div><div><dt>總重量（包括燈身）</dt><dd id="flight-weight"></dd></div></dl>
-          <p id="flight-note" role="status"></p>
-        </div>
-        <div class="exploration">
-          <figure class="density-chart"><figcaption>整盞燈的平均密度 <small>kg/m³</small></figcaption><svg viewBox="0 0 330 110" role="img" aria-label="燈內空氣及燈身對平均密度的貢獻，與外界密度比較"><path d="M15 80H315" class="axis"/><rect id="air-bar" x="15" y="35" height="27" fill="#247b9d"/><rect id="shell-bar" y="35" height="27" fill="#a95530"/><path d="M232.5 20V82" stroke="#203f50" stroke-dasharray="4 3"/><text x="232.5" y="14" text-anchor="middle">外界 1.16</text><text x="15" y="100">0</text><text x="315" y="100" text-anchor="end">1.6</text></svg><div class="observation"><span class="dot cool-dot"></span>燈內空氣<span class="dot warm-dot"></span>燈身</div></figure>
-          <dl class="readings"><div><dt>燈內空氣質量</dt><dd id="air-mass"></dd></div><div><dt>燈身＋空氣</dt><dd id="total-mass"></dd></div><div><dt>整盞燈的平均密度</dt><dd id="whole-density"></dd></div></dl>
-          <p id="density-feedback" class="explanation" role="status"></p>
-        </div>
-        <div class="solution" hidden><p>剛好臨界：整盞燈的平均密度等於外界。</p><div data-math="m_{\rm air}=\rho_0V-M=0.210\,\mathrm{kg}"></div><p>等壓下，同種氣體的密度與絕對溫度成反比。</p><div data-math="\rho_{\rm air}=\frac{0.210}{0.25}=0.840\,\mathrm{kg\,m^{-3}}"></div><div data-math="T=\frac{1.16\times300}{0.840}=414.3\,\mathrm K"></div><div data-math="t=414.3-273\approx141\,{}^\circ\mathrm C"></div><p class="quiet">臨界時合力為零；再稍為加熱，才可由靜止上升。</p><button class="critical wide">設至臨界溫度</button></div>
-        <div class="flight-actions"><button id="flight-play" class="primary">播放起飛過程</button><button id="flight-stop" hidden>返回調溫</button><button class="solution-toggle" aria-expanded="false">查看推算</button></div>
-      </div>
-      <div class="part" id="part-d" hidden>
-        <div class="exploration">
-          <p class="formula" data-math="pV=nRT,\qquad N=nN_{\rm A}"></p>
-          <dl class="readings molecule-readings"><div><dt>原有分子數</dt><dd id="initial-n"></dd></div><div><dt>目前仍在燈內</dt><dd id="inside-n"></dd></div><div class="emphasis"><dt>相比初始，淨流出</dt><dd id="outside-n"></dd></div></dl>
-          <div class="fraction-track" aria-label="原有空氣的保留比例"><div id="retained-bar"></div></div><p id="retained-label" class="quiet"></p>
-          <button class="critical wide">套用 (c) 臨界溫度</button>
-          <p class="quiet">壓強、體積不變；溫度增加，燈內分子數減少。</p>
-        </div>
-        <div class="solution" hidden><p>套用 (c) 臨界溫度，以開氏溫度計算初末氣體量。</p><div data-math="n_0=\frac{100000\times0.25}{8.31\times300}"></div><div data-math="n_1=\frac{100000\times0.25}{8.31\times414.3}"></div><div data-math="\Delta N=(n_0-n_1)N_{\rm A}"></div><div data-math="\Delta N\approx1.67\times10^{24}"></div><p>約有 <strong>1.67 × 10²⁴ 個分子</strong>淨流出。</p><p class="quiet">取 R=8.31 J mol⁻¹ K⁻¹，Nₐ=6.02×10²³ mol⁻¹；計算使用未四捨五入的臨界溫度。</p></div>
-        <button class="solution-toggle wide" aria-expanded="false">查看推算</button>
-      </div>
-      <div class="part" id="part-e" hidden>
-        <div class="choices surfaces" aria-label="選擇燈面"><button data-surface="light" aria-pressed="true"><span class="surface-swatch light"></span>淺色・光亮</button><button data-surface="dark" aria-pressed="false"><span class="surface-swatch dark"></span>深色・暗啞</button></div>
-        <figure class="loss-chart"><figcaption>同溫、同面積下的相對輻射散熱</figcaption><div><span>淺色光亮</span><div class="loss-track"><i id="light-loss"></i></div><b>較少</b></div><div><span>深色暗啞</span><div class="loss-track"><i id="dark-loss"></i></div><b>較多</b></div></figure>
-        <p id="surface-feedback" class="explanation"></p>
-        <p class="quiet">課本簡化比較：選較差的輻射體，可減少熱損失。實際放射率亦取決於材料及塗層；此處不計燃料耗用量。</p>
-      </div>
-      <div class="part-navigation"><button id="previous" disabled>上一小題</button><span id="part-position">1 / 5</span><button id="next">下一小題</button></div>
-    </aside>
   </div>
-  <footer>理想氣體、近似等壓；取 T=t+273。氣流、升降及圓點為示意，讀數取燈內平均值。</footer>
+  <footer>圓點示意空氣流動。播放時間及上升距離只作示意。</footer>
 </main>
 </body>
 </html>
