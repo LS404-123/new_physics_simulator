@@ -45,4 +45,31 @@ close(L.heat(219, 10), L.MAX);
 for (const value of [NaN, Infinity, -Infinity, 26.9, 220.1]) assert.throws(() => L.solve(value), RangeError);
 assert.throws(() => L.solve(100, "unknown"), RangeError);
 assert.throws(() => L.heat(100, -1), RangeError);
-console.log("通過：臨界起飛條件、總質量、等壓氣體定律、初末分子數守恆、100 份圖像權重、等溫表面比較與輸入範圍。");
+const stages = new Set();
+let previousFlight = L.flight(0);
+for (let time = 0; time <= L.FLIGHT_DURATION; time += 0.125) {
+  const current = L.flight(time);
+  stages.add(current.stage);
+  close(current.buoyancy, initial.buoyancy);
+  close(current.totalMass, current.airMass + L.M);
+  close(current.molecules * L.R / L.NA * current.temperature, L.P * L.V);
+  assert.ok(current.celsius >= previousFlight.celsius && current.lift >= previousFlight.lift);
+  assert.ok(current.airMass <= previousFlight.airMass);
+  if (current.status !== "rise") assert.equal(current.lift, 0, "合力未向上，不可先升起");
+  if (current.lift > 0) assert.ok(current.buoyancy > current.weight);
+  previousFlight = current;
+}
+assert.deepEqual([...stages], [0, 1, 2, 3, 4]);
+for (const time of [16, 17, 18]) {
+  assert.equal(L.flight(time).status, "neutral");
+  close(L.flight(time).celsius, L.CRITICAL);
+}
+assert.equal(L.flight(L.FLIGHT_DURATION).complete, true);
+assert.deepEqual(L.flight(100), L.flight(L.FLIGHT_DURATION));
+for (const boundary of [3, 8, 16, 18, 21, 24, 28]) {
+  const before = L.flight(boundary - 1e-6), after = L.flight(boundary + 1e-6);
+  assert.ok(Math.abs(after.celsius - before.celsius) < 0.0001);
+  assert.ok(Math.abs(after.lift - before.lift) < 0.0001);
+}
+for (const time of [-1, NaN, Infinity]) assert.throws(() => L.flight(time), RangeError);
+console.log("通過：臨界條件、質量與分子數守恆、等溫比較，以及連續起飛過程的五階段、臨界停留和上升時機。");

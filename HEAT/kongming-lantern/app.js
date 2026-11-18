@@ -12,6 +12,7 @@
   const reducedMotion = matchMedia("(prefers-reduced-motion: reduce)");
   let step = "a", state = Lantern.solve(27), running = !reducedMotion.matches;
   let heating = false, showArrows = false, phase = 0, lastTime;
+  let flight = null;
   let weights = Lantern.portions(state);
   const svgNS = "http://www.w3.org/2000/svg";
   $("art-back").innerHTML = lanternArt.back;
@@ -55,33 +56,51 @@
   function paint() {
     const flow = Math.min(1, (state.celsius - 27) / 35);
     const microscopic = step === "d";
-    const lift = ["c", "d"].includes(step) ? Math.min(62, Math.max(0, state.netForce) * 130) : 0;
+    const lift = flight ? flight.lift : ["c", "d"].includes(step) ? Math.min(62, Math.max(0, state.netForce) * 130) : 0;
     $("lamp").setAttribute("transform", `translate(0 ${-lift})`);
+    const launchY = flight ? projectAir(0, 29.5, 79.2)[1] + 3 : 412;
+    $("launch-line").setAttribute("d", `M135 ${launchY}H480`);
+    $("launch-line").setAttribute("stroke-dasharray", flight ? "5 5" : "none");
     for (let i = 0; i < 100; i++) {
       const t = phase + i * 2.39996, sign = i % 2 ? 1 : -1;
       const initialH = -55 + (i % 10) * 12 + 1.5 * Math.sin(i * 4);
       const initialZ = 58 + Math.floor(i / 10) * 18 + 1.5 * Math.cos(i * 3);
-      const h = microscopic ? -55 + 110 * wave(i * 0.618 + phase * 0.21)
+      let h = microscopic ? -55 + 110 * wave(i * 0.618 + phase * 0.21)
         : initialH * (1 - flow) + sign * (26 + 26 * Math.cos(t)) * flow;
-      const z = microscopic ? 58 + 166 * wave(i * 0.414 + phase * 0.29)
+      let z = microscopic ? 58 + 166 * wave(i * 0.414 + phase * 0.29)
         : initialZ * (1 - flow) + (143 - 79 * Math.sin(t)) * flow;
+      let opacity = weights[i], leaving = false;
+      if (flight) {
+        // 圓點沿底部開口連續移動，表示氣流；數值仍由等壓氣體模型計算。
+        const departure = (1 - state.fraction) * 100 - (99 - i);
+        const approach = Math.max(0, Math.min(1, (departure + 4) / 4));
+        h = h * (1 - approach) + sign * 42 * approach;
+        z = z * (1 - approach) + 31 * approach;
+        opacity = 1;
+        if (departure > 0) {
+          h = sign * (42 + Math.min(departure, 3) * 9);
+          z = 31 - Math.min(departure, 4) * 12;
+          opacity = Math.max(0, 1 - departure / 5);
+          leaving = true;
+        }
+      }
       const [x, y] = projectAir(h, z);
       dots[i].setAttribute("cx", x);
       dots[i].setAttribute("cy", y);
-      dots[i].setAttribute("opacity", weights[i]);
-      dots[i].setAttribute("fill", !microscopic && flow > 0 && Math.cos(t) < -0.2 ? "#a95530" : "#247b9d");
+      dots[i].setAttribute("opacity", opacity);
+      dots[i].setAttribute("fill", leaving || (!microscopic && flow > 0 && Math.cos(t) < -0.2) ? "#a95530" : "#247b9d");
       const outside = projectAir(-60 + (i % 10) * 13, 7 - (Math.floor((99 - i) / 10) % 4) * 7);
       escaped[i].setAttribute("cx", outside[0]);
       escaped[i].setAttribute("cy", outside[1]);
       escaped[i].setAttribute("opacity", microscopic ? 1 - weights[i] : 0);
     }
-    const arrows = (showArrows && step === "a") || step === "b";
+    const arrows = (showArrows && step === "a") || step === "b" || !!flight;
     $("flow-arrows").style.display = arrows && flow > 0 ? "" : "none";
-    $("flow-labels").style.display = arrows && flow > 0 ? "" : "none";
+    $("flow-labels").style.display = arrows && flow > 0 && !flight ? "" : "none";
     $("forces").style.display = step === "c" ? "" : "none";
-    $("outflow").style.display = microscopic && state.celsius > 27 ? "" : "none";
-    $("opening-label").style.display = microscopic ? "none" : "";
-    $("flame").style.display = state.celsius > 27 || heating ? "" : "none";
+    $("outflow").style.display = (microscopic && state.celsius > 27) || (flight && flight.heating && flight.elapsed > 0) ? "" : "none";
+    $("opening-label").style.display = microscopic || flight ? "none" : "";
+    $("flame").style.display = state.celsius > 27 || heating || flight ? "" : "none";
     $("radiation-rays").style.display = step === "e" ? "" : "none";
     const rayStrength = state.radiation / Lantern.solve(Lantern.MAX, "dark").radiation;
     rays.forEach((ray, i) => ray.setAttribute("opacity", state.celsius === 27 ? 0 : Math.min(1, 0.15 + rayStrength) * (running ? 0.75 + 0.25 * Math.sin(phase * 2 + i) : 1)));
@@ -89,6 +108,33 @@
 
   function render() {
     weights = Lantern.portions(state);
+    const flightTitles = ["燃料加熱空氣", "空氣從底部流出", "總重量逐漸下降", "浮力大於總重量", "合力向上，孔明燈升起"];
+    text("part-title", flight ? "由加熱到起飛" : steps[step][0]);
+    text("question-prompt", flight ? "觀察：浮力有沒有增加？總重量怎樣改變，何時開始升起？" : steps[step][1]);
+    text("scene-title", flight ? flightTitles[flight.stage] : steps[step][2]);
+    $("flight-story").hidden = !flight;
+    $("flight-stop").hidden = !flight;
+    $("part-c").querySelector(".solution-toggle").hidden = !!flight;
+    $("temperature").disabled = !!flight;
+    $("heat").disabled = !!flight;
+    text("flight-play", flight ? "重新播放" : "播放起飛過程");
+    if (flight) {
+      $("part-c").querySelector(".exploration").hidden = true;
+      $("part-c").querySelector(".solution").hidden = true;
+      document.querySelectorAll(".flight-steps li").forEach((item, index) => {
+        item.classList.toggle("passed", index < flight.stage || flight.complete);
+        if (index === flight.stage) item.setAttribute("aria-current", "step");
+        else item.removeAttribute("aria-current");
+      });
+      text("flight-air", `${(state.airMass * 1000).toFixed(1)} g`);
+      text("flight-weight", `${state.weight.toFixed(2)} N`);
+      text("flight-note", state.status === "neutral" ? "臨界約 141°C：浮力＝總重量，仍未由靜止上升。再加熱看看。"
+        : flight.stage === 0 ? "火焰令空氣升溫。孔明燈的體積保持不變。"
+        : flight.stage === 1 ? "底部開口讓部分空氣流出，燈內壓強維持接近大氣壓。"
+        : flight.stage === 2 ? "流出的是空氣；燈身仍是 80 g。總重量下降，浮力維持 2.84 N。"
+        : flight.stage === 3 ? "浮力已大於總重量，出現向上的合力，開始上升。"
+        : "空氣流出令整盞燈變輕；浮力大於總重量，所以向上升起。");
+    }
     const precision = state.status === "neutral" ? 2 : 1;
     $("temperature").value = state.celsius;
     $("temperature").setAttribute("aria-valuetext", `${state.celsius.toFixed(precision)} 攝氏度，${state.temperature.toFixed(precision)} K`);
@@ -128,17 +174,19 @@
       d: "100 點代表初始空氣的等份量；下方橙點為淨流出份量。",
       e: "波線表示輻射散熱；兩種表面以相同溫度比較。"
     };
-    text("scene-caption", captions[step]);
-    text("motion", running ? "暫停動畫" : "播放動畫");
+    const caption = flight ? "圓點示意氣流；加熱與流出同時發生，播放時間及升降距離為示意。" : captions[step];
+    text("scene-caption", caption);
+    text("motion", flight?.complete ? "重播動畫" : running ? "暫停動畫" : "播放動畫");
     $("motion").setAttribute("aria-pressed", String(running));
     text("heat", heating ? "停止加熱" : "逐步加熱");
     $("heat").setAttribute("aria-pressed", String(heating));
-    text("scene-description", `${steps[step][2]}。燈內 ${state.celsius.toFixed(1)} 攝氏度，總密度 ${state.totalDensity.toFixed(3)} kg/m³。${captions[step]}`);
+    text("scene-description", `${$("scene-title").textContent}。燈內 ${state.celsius.toFixed(1)} 攝氏度，總密度 ${state.totalDensity.toFixed(3)} kg/m³。${caption}`);
     paint();
   }
 
   function selectStep(next) {
     if (!steps[next]) return;
+    if (next !== step && flight) endFlight();
     step = next;
     const index = letters.indexOf(step);
     document.querySelectorAll("[data-step]").forEach(button => {
@@ -147,9 +195,6 @@
     });
     for (const letter of letters) $("part-" + letter).hidden = letter !== step;
     text("part-number", `(${step})`);
-    text("part-title", steps[step][0]);
-    text("question-prompt", steps[step][1]);
-    text("scene-title", steps[step][2]);
     text("marks", steps[step][3] + " 分");
     text("part-position", `${index + 1} / 5`);
     $("previous").disabled = index === 0;
@@ -160,6 +205,22 @@
     state = Lantern.solve(value, state.surface);
     render();
   }
+  function endFlight() {
+    flight = null;
+    running = false;
+    $("part-c").querySelector(".exploration").hidden = false;
+  }
+  function startFlight() {
+    heating = false; running = true; phase = 0;
+    flight = Lantern.flight(0, state.surface);
+    state = flight;
+    const solutionButton = $("part-c").querySelector(".solution-toggle");
+    solutionButton.setAttribute("aria-expanded", "false");
+    solutionButton.textContent = "查看推算";
+    render();
+  }
+  $("flight-play").addEventListener("click", startFlight);
+  $("flight-stop").addEventListener("click", () => { endFlight(); render(); });
   document.querySelectorAll("[data-step]").forEach(button => button.addEventListener("click", () => selectStep(button.dataset.step)));
   $("previous").addEventListener("click", () => selectStep(letters[letters.indexOf(step) - 1]));
   $("next").addEventListener("click", () => selectStep(letters[letters.indexOf(step) + 1]));
@@ -169,7 +230,10 @@
     if (heating) running = true;
     render();
   });
-  $("motion").addEventListener("click", () => { running = !running; if (!running) heating = false; render(); });
+  $("motion").addEventListener("click", () => {
+    if (flight?.complete) { startFlight(); return; }
+    running = !running; if (!running) heating = false; render();
+  });
   $("arrows").addEventListener("click", () => {
     showArrows = !showArrows;
     $("arrows").setAttribute("aria-pressed", String(showArrows));
@@ -193,8 +257,8 @@
     const expanded = button.getAttribute("aria-expanded") !== "true";
     button.setAttribute("aria-expanded", String(expanded));
     button.textContent = expanded ? "返回觀察" : "查看推算";
-    button.parentElement.querySelector(".solution").hidden = !expanded;
-    button.parentElement.querySelector(".exploration").hidden = expanded;
+    button.closest(".part").querySelector(".solution").hidden = !expanded;
+    button.closest(".part").querySelector(".exploration").hidden = expanded;
   }));
   document.querySelectorAll("[data-surface]").forEach(button => button.addEventListener("click", () => {
     document.querySelectorAll("[data-surface]").forEach(b => b.setAttribute("aria-pressed", String(b === button)));
@@ -202,6 +266,7 @@
     render();
   }));
   $("reset").addEventListener("click", () => {
+    flight = null;
     heating = false; running = !reducedMotion.matches; showArrows = false; phase = 0;
     state = Lantern.solve(27);
     $("arrows").setAttribute("aria-pressed", "false");
@@ -212,8 +277,8 @@
     document.querySelectorAll("[data-surface]").forEach(b => b.setAttribute("aria-pressed", String(b.dataset.surface === "light")));
     document.querySelectorAll(".solution-toggle").forEach(b => {
       b.setAttribute("aria-expanded", "false"); b.textContent = "查看推算";
-      b.parentElement.querySelector(".solution").hidden = true;
-      b.parentElement.querySelector(".exploration").hidden = false;
+      b.closest(".part").querySelector(".solution").hidden = true;
+      b.closest(".part").querySelector(".exploration").hidden = false;
     });
     selectStep("a");
   });
@@ -225,7 +290,12 @@
     lastTime = now;
     if (running && !document.hidden) {
       phase += dt * 1.3 * Math.sqrt(state.temperature / Lantern.T0);
-      if (heating) {
+      if (flight) {
+        flight = Lantern.flight(flight.elapsed + dt, state.surface);
+        state = flight;
+        if (flight.complete) running = false;
+        render();
+      } else if (heating) {
         const next = Lantern.heat(state.celsius, dt);
         if (next === Lantern.MAX) heating = false;
         setTemperature(next);

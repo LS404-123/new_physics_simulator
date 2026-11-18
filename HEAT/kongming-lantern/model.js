@@ -44,5 +44,20 @@
     return solve(Math.min(MAX, celsius + seconds * 12)).celsius;
   }
 
-  return { V, M, P, RHO, T0, R, NA, G, MIN, MAX, INITIAL_MASS, INITIAL_N, CRITICAL, surfaces, solve, portions, heat };
+  const FLIGHT_DURATION = 28;
+  function flight(seconds, surface = "light") {
+    if (!Number.isFinite(seconds) || seconds < 0) throw new RangeError("播放時間須為非負有限數值。");
+    const elapsed = Math.min(seconds, FLIGHT_DURATION);
+    const celsius = elapsed < 8 ? MIN + (90 - MIN) * elapsed / 8
+      : elapsed < 16 ? 90 + (CRITICAL - 90) * (elapsed - 8) / 8
+      : elapsed <= 18 ? CRITICAL
+      : elapsed < 24 ? CRITICAL + (180 - CRITICAL) * (elapsed - 18) / 6 : 180;
+    const state = solve(celsius, surface);
+    const stage = elapsed < 3 ? 0 : elapsed < 8 ? 1 : elapsed <= 18 ? 2 : elapsed < 21 ? 3 : 4;
+    // shortcut: 播放節奏與升降距離只作因果示意；研究飛行速度時才加入熱功率及阻力模型。
+    const lift = state.status === "rise" ? 78 * ((elapsed - 18) / 10) ** 2 : 0;
+    return { ...state, elapsed, stage, lift, heating: elapsed < 16 || (elapsed > 18 && elapsed < 24), complete: elapsed === FLIGHT_DURATION };
+  }
+
+  return { V, M, P, RHO, T0, R, NA, G, MIN, MAX, INITIAL_MASS, INITIAL_N, CRITICAL, surfaces, solve, portions, heat, FLIGHT_DURATION, flight };
 });
